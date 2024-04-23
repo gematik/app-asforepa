@@ -1,0 +1,40 @@
+# minimum viable test environment specification
+asforepacfg:
+  version: "x.x.x-SNAPSHOT"
+
+ports:
+  asforepa: ${free.port.100}
+
+tigerProxy:
+  adminPort: ${free.port.201}
+  proxyPort: ${free.port.200}
+  forwardToProxy:
+    hostname: 192.168.110.10
+    port: 3128
+    type: https
+  keyFolders:
+    - .
+
+lib:
+  activateWorkflowUI: false
+  rbelPathDebugging: false
+
+
+servers:
+  asforepa:
+    type: externalJar
+    environment:
+      - ASFOREPA_URL=http://127.0.0.1:${tiger.ports.asforepa}
+    healthcheckUrl: http://127.0.0.1:${tiger.ports.asforepa}
+    externalJarOptions:
+      arguments:
+        - --server.port=${tiger.ports.asforepa}
+      workingDir: ../asforepa/target
+    source:
+      - local://asforepa-${tiger.asforepacfg.version}.jar
+    startupTimeoutSec: 60
+    active: true
+
+anythingPath: anything
+
+anythingEndpoint: http://asforepa/${tiger.anythingPath}

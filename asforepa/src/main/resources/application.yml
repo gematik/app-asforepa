@@ -1,0 +1,26 @@
+asforepa:
+  serverUrl: "${ASFOREPA_URL:https://asforepa.dev.gematik.solutions}"
+  idpDienstUrl: "https://idp-test.app.ti-dienste.de"
+  clientID: "ePA"
+  redirectUri: "${REDIRECT_URI:http://test-ps.gematik.de/ePA}"
+  scopes: [ "epa", "openid" ]
+  debug:
+    requestLogging: true
+  loglevel: info
+server:
+  port: ${SERVER_PORT:8086}
+management:
+  server:
+    port: ${MANAGEMENT_PORT:8186}
+  endpoints:
+    web:
+      exposure:
+        include: "health"
+    enabled-by-default: false
+  endpoint:
+    health:
+      enabled: true
+    metrics:
+      enabled: true
+    logfile:
+      enabled: true

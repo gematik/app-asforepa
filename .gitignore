@@ -1,0 +1,10 @@
+.idea/
+*.iml
+**/target
+logs/
+
+doc/intern/
+*.Jenkinsfile
+removeDockerImages.sh
+asforepa-testsuite/tiger.yaml
+

@@ -1,0 +1,19 @@
+# minimum viable test environment specification
+tigerProxy:
+  adminPort: ${free.port.201}
+  proxyPort: ${free.port.200}
+  keyFolders:
+    - .
+
+lib:
+  activateWorkflowUI: false
+  rbelPathDebugging: false
+
+
+servers:
+  asforepa:
+    type: externalUrl
+    startupTimeoutSec: 1
+    source:
+      - https://localhost:443
+    active: true

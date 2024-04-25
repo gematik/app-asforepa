@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~  Copyright 2024 gematik GmbH
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>de.gematik.idp</groupId>
+    <artifactId>asforepa-global</artifactId>
+    <version>1.0.3</version>
+  </parent>
+
+  <artifactId>asforepa-testsuite</artifactId>
+  <version>1.0.3</version>
+  <packaging>jar</packaging>
+  <description>Testsuite fuer authorization server for ePA</description>
+
+  <properties>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <dependency>
+      <groupId>de.gematik.test</groupId>
+      <artifactId>tiger-test-lib</artifactId>
+      <version>${version.tiger}</version>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/org.junit.vintage/junit-vintage-engine -->
+    <dependency>
+      <groupId>org.junit.vintage</groupId>
+      <artifactId>junit-vintage-engine</artifactId>
+      <version>5.10.2</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>de.gematik.idp</groupId>
+      <artifactId>idp-commons</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <artifactId>maven-resources-plugin</artifactId>
+          <version>${version.maven-resources-plugin}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>${version.maven-compiler-plugin}</version>
+          <configuration>
+            <encoding>${project.build.sourceEncoding}</encoding>
+            <source>${version.java}</source>
+            <target>${version.java}</target>
+            <debug>true</debug>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>${version.maven-enforcer-plugin}</version>
+        <executions>
+          <execution>
+            <id>enforce-versions</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireJavaVersion>
+                  <message>Java version should be ${version.java}.</message>
+                  <version>${version.java}</version>
+                </requireJavaVersion>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${version.maven-surefire-plugin}</version>
+        <configuration>
+          <!--suppress UnresolvedMavenProperty, MavenModelInspection -->
+          <skipTests>${skip.unittests}</skipTests>
+        </configuration>
+      </plugin>
+      <!-- tag::generator-plugin[] -->
+      <!-- optional plugin to dynamically create JUnit driver classes on the fly.
+                  You may omit this plugin if you have written your driver classes manually.
+                  -->
+      <plugin>
+        <groupId>de.gematik.test</groupId>
+        <artifactId>tiger-maven-plugin</artifactId>
+        <version>${version.tiger}</version>
+        <executions>
+          <execution>
+            <id>generate-tiger-drivers</id>
+            <goals>
+              <goal>generate-drivers</goal>
+            </goals>
+            <phase>generate-test-sources</phase>
+            <configuration>
+              <!-- mandatory -->
+              <glues>
+                <glue>de.gematik.test.tiger.glue</glue>
+                <!-- <glue>de.gematik.idp.asforepa.test.steps</glue>-->
+                <!-- add your packages here -->
+              </glues>
+              <!-- optional -->
+              <featuresDir>${project.basedir}/src/test/resources/features</featuresDir>
+              <!-- optional -->
+              <includes>
+                <include>**/*.feature</include>
+              </includes>
+              <!-- optional -->
+              <driverPackage>de.gematik.test.tiger.examples.bdd.drivers</driverPackage>
+              <!-- optional -->
+              <!--suppress UnresolvedMavenProperty -->
+              <driverClassName>Driver${ctr}IT</driverClassName>
+              <!-- optional, defaults to the templated located at
+                                          /src/main/resources/driverClassTemplate.jtmpl
+                                          in the tiger-maven-plugin module.
+                                          Use separate template file if you have spring boot apps to test
+                                          or need to do some more fancy set up stuff.
+                                          <templateFile>${project.basedir}/..../XXXX.jtmpl</templateFile>
+                                          -->
+              <!--suppress UnresolvedMavenProperty, MavenModelInspection -->
+              <skip>${skip.inttests}</skip>
+            </configuration>
+          </execution>
+          <execution>
+            <id>generate-tiger-report</id>
+            <goals>
+              <goal>generate-serenity-reports</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <version>${version.maven-failsafe-plugin}</version>
+        <configuration>
+          <forkedProcessExitTimeoutInSeconds>18000</forkedProcessExitTimeoutInSeconds>
+          <includes>
+            <!-- adapt to the class names of your driver classes -->
+            <include>**/Driver*IT.java</include>
+          </includes>
+          <parallel>classes</parallel>
+          <perCoreThreadCount>true</perCoreThreadCount>
+          <!--suppress UnresolvedMavenProperty, MavenModelInspection -->
+          <skipITs>${skip.inttests}</skipITs>
+          <systemPropertyVariables>
+            <!--suppress UnresolvedMavenProperty -->
+            <cucumber.filter.tags>@Approval and not @OpenBug and not @WiP
+            </cucumber.filter.tags>
+          </systemPropertyVariables>
+          <environmentVariables>
+            <TIGER_ASFOREPACFG_VERSION>${project.version}</TIGER_ASFOREPACFG_VERSION>
+          </environmentVariables>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

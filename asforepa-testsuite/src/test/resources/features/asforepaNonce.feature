@@ -29,6 +29,7 @@ Feature: Test Nonce Endpoint
   - den Code 200 enthalten
 
     Given TGR clear recorded messages
+    When TGR set default header 'x-useragent' to '${asforepa.validUserAgent}'
     When TGR send empty GET request to "http://asforepa/epa/authz/v1/getNonce"
     And TGR find request to path ".*"
     Then TGR current response with attribute "$.responseCode" matches "200"
@@ -45,6 +46,7 @@ Feature: Test Nonce Endpoint
   - den korrekten Json Body enthalten
 
     Given TGR clear recorded messages
+    When TGR set default header 'x-useragent' to '${asforepa.validUserAgent}'
     When TGR send empty GET request to "http://asforepa/epa/authz/v1/getNonce"
     And TGR find request to path ".*"
     Then TGR current response at "$.body" matches as JSON:

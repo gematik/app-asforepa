@@ -17,11 +17,12 @@
 package de.gematik.idp.asforepa.validation;
 
 import de.gematik.idp.exceptions.IdpJoseException;
+import de.gematik.idp.field.ClaimName;
 import de.gematik.idp.token.JsonWebToken;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
-import java.security.cert.X509Certificate;
-import java.util.Optional;
+import java.util.NoSuchElementException;
+import org.jose4j.jws.AlgorithmIdentifiers;
 
 public class ClientAttestValidator implements ConstraintValidator<ValidateClientAttest, String> {
 
@@ -32,15 +33,12 @@ public class ClientAttestValidator implements ConstraintValidator<ValidateClient
 
   private static boolean isValidClientAttest(final JsonWebToken clientAttest) {
     try {
-      final Optional<X509Certificate> smcbCertificate =
-          clientAttest.getClientCertificateFromHeader();
-      if (smcbCertificate.isEmpty()) {
-        return false;
-      }
-      clientAttest.verify(smcbCertificate.get().getPublicKey());
-    } catch (final IdpJoseException e) {
+      final String algorithm =
+          (String) clientAttest.getHeaderClaim(ClaimName.ALGORITHM).orElseThrow();
+      return algorithm.equals(AlgorithmIdentifiers.RSA_PSS_USING_SHA256)
+          || algorithm.equals(AlgorithmIdentifiers.ECDSA_USING_P256_CURVE_AND_SHA256);
+    } catch (final IdpJoseException | NoSuchElementException e) {
       return false;
     }
-    return true;
   }
 }

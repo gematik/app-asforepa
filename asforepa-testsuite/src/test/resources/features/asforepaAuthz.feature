@@ -31,6 +31,7 @@ Feature: Test Authorization Endpoint
   - den Code 302 enthalten
 
     Given TGR clear recorded messages
+    When TGR set default header 'x-useragent' to '${asforepa.validUserAgent}'
     When TGR send empty GET request to "http://asforepa/epa/authz/v1/send_authorization_request_sc"
     And TGR find request to path ".*"
     Then TGR current response with attribute "$.responseCode" matches "302"
@@ -47,6 +48,7 @@ Feature: Test Authorization Endpoint
   - die korrekten Parameter in der Location enthalten
 
     Given TGR clear recorded messages
+    When TGR set default header 'x-useragent' to '${asforepa.validUserAgent}'
     When TGR send empty GET request to "http://asforepa/epa/authz/v1/send_authorization_request_sc"
     And TGR find request to path ".*"
     Then TGR current response with attribute "$.header.Location" matches ".*redirect_uri=.*"

@@ -19,6 +19,7 @@ package de.gematik.idp.asforepa.exceptions.handler;
 import de.gematik.idp.asforepa.exceptions.AsEpaException;
 import de.gematik.idp.data.Oauth2ErrorCode;
 import de.gematik.idp.data.Oauth2ErrorResponse;
+import jakarta.validation.ConstraintViolationException;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -54,7 +55,8 @@ public class AsEpaExceptionHandler {
 
   @ExceptionHandler({
     MissingServletRequestParameterException.class,
-    MethodArgumentNotValidException.class
+    MethodArgumentNotValidException.class,
+    ConstraintViolationException.class
   })
   public ResponseEntity<Oauth2ErrorResponse> handleMissingServletRequestParameter(
       final Exception exc) {

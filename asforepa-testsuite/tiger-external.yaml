@@ -9,6 +9,9 @@ lib:
   activateWorkflowUI: false
   rbelPathDebugging: false
 
+additionalYamls:
+  - filename: tc_properties.yaml
+    baseKey: asforepa
 
 servers:
   asforepa:

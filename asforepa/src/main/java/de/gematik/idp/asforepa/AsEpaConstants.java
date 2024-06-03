@@ -29,4 +29,7 @@ public final class AsEpaConstants {
       "/epa/authz/v1/send_authorization_request_sc";
   public static final int VAU_NP_STR_LEN = 20;
   public static final int NONCE_STR_LEN = 64;
+  public static final String X_USERAGENT = "x-useragent";
+  public static final int MAX_AUTH_SESSION_AMOUNT = 10000;
+  public static final int REQUEST_URI_TTL_SECS = 90;
 }

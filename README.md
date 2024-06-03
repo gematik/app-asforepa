@@ -59,11 +59,11 @@ therefore added for unit tests.
 
 ## Usage
 
-| Method | Endpoint                      | Request                                                            | Response         | Validation                                                                                                                                                                       |
-|--------|-------------------------------|--------------------------------------------------------------------|------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| GET    | getNonce                      | -                                                                  | body: nonce      | -                                                                                                                                                                                |
-| GET    | send_authorization_request_sc | -                                                                  | header: location | -                                                                                                                                                                                |
-| POST   | send_authcode_sc              | body:<br/> AuthCodeRequest <br/> (conatins authCode, clientAttest) | body: vau-np     | *authCode:* <br/> + not null <br/> + all header claims correct <br/> - no validation of the claim value <br/> <br/> *clientAttest:* <br/> + not null <br/> + verifies certificat |
+| Method | Endpoint                      | Request                                                            | Response         | Validation                                                                                                                                                                          |
+|--------|-------------------------------|--------------------------------------------------------------------|------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| GET    | getNonce                      | -                                                                  | body: nonce      | -                                                                                                                                                                                   |
+| GET    | send_authorization_request_sc | -                                                                  | header: location | -                                                                                                                                                                                   |
+| POST   | send_authcode_sc              | body:<br/> AuthCodeRequest <br/> (conatins authCode, clientAttest) | body: vau-np     | *authCode:* <br/> + not null <br/> + all header claims correct <br/> - no validation of the claim value <br/> <br/> *clientAttest:* <br/> + not null <br/> + checks algorithm value |
 
 **getNonce**
 > - PS requests a valid nonce
@@ -86,5 +86,4 @@ therefore added for unit tests.
 > - PS sends authCode (received by IDP) and clientAttest
 > - AS validates both values for not being null
 > - AS validates if authCode has correct claims, but doesn't check the claim value
-> - AS validates the signature of the certificate/clientAttest, but doesn't check if the nonce is
-    valid.
+> - AS checks if algorithm in client attest header is "ES256" or "PS256"

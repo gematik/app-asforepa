@@ -142,7 +142,7 @@
       <groupId>org.springframework</groupId>
     </dependency>
     <dependency>
-      <artifactId>unirest-java</artifactId>
+      <artifactId>unirest-java-core</artifactId>
       <groupId>com.konghq</groupId>
     </dependency>
     <dependency>
@@ -165,6 +165,10 @@
       <artifactId>log4j-slf4j2-impl</artifactId>
       <groupId>org.apache.logging.log4j</groupId>
     </dependency>
+    <dependency>
+      <groupId>com.konghq</groupId>
+      <artifactId>unirest-objectmapper-jackson</artifactId>
+    </dependency>
   </dependencies>
   <description>Authorization Server for ePA</description>
   <modelVersion>4.0.0</modelVersion>
@@ -174,13 +178,13 @@
     <artifactId>asforepa-global</artifactId>
     <groupId>de.gematik.idp</groupId>
     <relativePath>../pom.xml</relativePath>
-    <version>2.0.0</version>
+    <version>2.0.1</version>
   </parent>
 
   <properties>
     <commit_hash>undefined</commit_hash>
   </properties>
 
-  <version>2.0.0</version>
+  <version>2.0.1</version>
 
 </project>

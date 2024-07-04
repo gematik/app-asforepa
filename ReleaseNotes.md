@@ -1,3 +1,9 @@
+# Release 2.0.1
+
+- bug fix in send_authcode_sc response
+- add validation for client attest and auth code to be base64url
+- update dependencies
+
 # Release 2.0.0
 
 - remove parent pom from testsuite to avoid dependency conflicts

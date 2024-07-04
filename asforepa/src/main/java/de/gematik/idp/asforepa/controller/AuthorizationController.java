@@ -32,6 +32,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import de.gematik.idp.asforepa.configuration.AsForEpaConfiguration;
 import de.gematik.idp.asforepa.data.AuthCodeRequest;
+import de.gematik.idp.asforepa.data.AuthorizationResponse;
 import de.gematik.idp.asforepa.data.NonceResponse;
 import de.gematik.idp.asforepa.data.UserAgentHeader;
 import de.gematik.idp.asforepa.exceptions.AsEpaException;
@@ -118,13 +119,13 @@ public class AuthorizationController {
       value = AUTH_CODE_ENDPOINT,
       consumes = "application/json",
       produces = "application/json")
-  public String sendAuthCodeSc(
+  public AuthorizationResponse sendAuthCodeSc(
       @Valid @RequestHeader(name = X_USERAGENT) final UserAgentHeader userAgent,
       @Valid @RequestBody final AuthCodeRequest authCodeRequest) {
     final String noncePayload = getNonceFromClientAttest(authCodeRequest.getClientAttest());
     validateNonce(noncePayload);
     authSessions.remove(noncePayload);
-    return Nonce.getNonceAsHex(VAU_NP_STR_LEN);
+    return new AuthorizationResponse(Nonce.getNonceAsHex(VAU_NP_STR_LEN));
   }
 
   private String createLocationForAuthzResponseSc(

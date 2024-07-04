@@ -27,6 +27,12 @@ public class AuthCodeValidator implements ConstraintValidator<ValidateAuthCode, 
 
   @Override
   public boolean isValid(final String authCode, final ConstraintValidatorContext cxt) {
+    if (!Base64UrlValidator.isBase64URL(authCode)) {
+      cxt.disableDefaultConstraintViolation();
+      cxt.buildConstraintViolationWithTemplate("auth code doesn't match base64url pattern")
+          .addConstraintViolation();
+      return false;
+    }
     return hasCorrectHeaderClaims(new IdpJwe(authCode));
   }
 

@@ -22,19 +22,19 @@
 
   <groupId>de.gematik.idp</groupId>
   <artifactId>asforepa-testsuite</artifactId>
-  <version>2.0.0</version>
+  <version>2.0.1</version>
   <packaging>jar</packaging>
   <description>Testsuite fuer authorization server for ePA</description>
 
   <properties>
     <version.java>17</version.java>
-    <version.tiger>3.0.4</version.tiger>
-    <version.idp-commons>27.0.3</version.idp-commons>
-    <version.lombok>1.18.32</version.lombok>
+    <version.tiger>3.1.1</version.tiger>
+    <version.idp-commons>28.0.1</version.idp-commons>
+    <version.lombok>1.18.34</version.lombok>
     <version.maven-compiler-plugin>3.13.0</version.maven-compiler-plugin>
-    <version.maven-enforcer-plugin>3.4.1</version.maven-enforcer-plugin>
-    <version.maven-failsafe-plugin>3.2.5</version.maven-failsafe-plugin>
-    <version.maven-surefire-plugin>3.2.5</version.maven-surefire-plugin>
+    <version.maven-enforcer-plugin>3.5.0</version.maven-enforcer-plugin>
+    <version.maven-failsafe-plugin>3.3.0</version.maven-failsafe-plugin>
+    <version.maven-surefire-plugin>3.3.0</version.maven-surefire-plugin>
     <version.maven-resources-plugin>3.3.1</version.maven-resources-plugin>
     <version.spotless-maven-plugin>2.43.0</version.spotless-maven-plugin>
     <version.spotless.google-java-format>1.16.0</version.spotless.google-java-format>
@@ -42,6 +42,11 @@
 
   <dependencyManagement>
     <dependencies>
+      <dependency>
+        <groupId>ch.qos.logback</groupId>
+        <artifactId>logback-classic</artifactId>
+        <version>1.5.6</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 

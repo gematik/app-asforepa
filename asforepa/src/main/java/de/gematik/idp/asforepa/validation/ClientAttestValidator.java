@@ -28,6 +28,11 @@ public class ClientAttestValidator implements ConstraintValidator<ValidateClient
 
   @Override
   public boolean isValid(final String clientAttest, final ConstraintValidatorContext cxt) {
+    if (clientAttest == null) {
+      cxt.disableDefaultConstraintViolation();
+      cxt.buildConstraintViolationWithTemplate("client attest is missing").addConstraintViolation();
+      return false;
+    }
     if (!Base64UrlValidator.isBase64URL(clientAttest)) {
       cxt.disableDefaultConstraintViolation();
       cxt.buildConstraintViolationWithTemplate("client attest doesn't match base64url pattern")

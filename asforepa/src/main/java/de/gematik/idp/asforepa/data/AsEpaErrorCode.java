@@ -16,21 +16,26 @@
 
 package de.gematik.idp.asforepa.data;
 
+import com.fasterxml.jackson.annotation.JsonValue;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import de.gematik.idp.asforepa.validation.ValidateAuthCode;
-import de.gematik.idp.asforepa.validation.ValidateClientAttest;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @JsonNaming(PropertyNamingStrategies.LowerCamelCaseStrategy.class)
-@Builder
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class AuthCodeRequest {
-  @ValidateAuthCode private String authorizationCode;
-  @ValidateClientAttest private String clientAttest;
+public enum AsEpaErrorCode {
+  MALFORMED_REQUEST("malformedRequest"),
+  INVALID_AUTH("invalAuth"),
+  NO_RESOURCE("noResource"),
+  STATUS_MISMATCH("statusMismatch"),
+  INTERNAL_ERROR("internalError");
+
+  private final String serializationValue;
+
+  @JsonValue
+  public String getSerializationValue() {
+    return this.serializationValue;
+  }
+
+  private AsEpaErrorCode(final String serializationValue) {
+    this.serializationValue = serializationValue;
+  }
 }

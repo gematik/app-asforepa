@@ -16,21 +16,23 @@
 
 package de.gematik.idp.asforepa.data;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import de.gematik.idp.asforepa.validation.ValidateAuthCode;
-import de.gematik.idp.asforepa.validation.ValidateClientAttest;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @JsonNaming(PropertyNamingStrategies.LowerCamelCaseStrategy.class)
-@Builder
+@Builder(toBuilder = true)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class AuthCodeRequest {
-  @ValidateAuthCode private String authorizationCode;
-  @ValidateClientAttest private String clientAttest;
+public class AsEpaErrorResponse {
+  @JsonProperty("errorCode")
+  private AsEpaErrorCode errorCode;
+
+  @JsonProperty("errorDetail")
+  private String errorDetail;
 }

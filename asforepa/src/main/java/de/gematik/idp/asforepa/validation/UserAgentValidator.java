@@ -25,7 +25,8 @@ public class UserAgentValidator implements ConstraintValidator<ValidateUserAgent
   public boolean isValid(final String userAgent, final ConstraintValidatorContext cxt) {
     if (userAgent == null || userAgent.isEmpty()) {
       cxt.disableDefaultConstraintViolation();
-      cxt.buildConstraintViolationWithTemplate("missing user agent").addConstraintViolation();
+      cxt.buildConstraintViolationWithTemplate("user agent header is missing")
+          .addConstraintViolation();
       return false;
     } else if (!userAgent.matches("^[a-zA-Z0-9]{20}\\/[a-zA-Z0-9\\-\\.]{1,15}$")) {
       cxt.disableDefaultConstraintViolation();

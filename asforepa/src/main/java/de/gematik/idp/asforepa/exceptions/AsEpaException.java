@@ -16,7 +16,7 @@
 
 package de.gematik.idp.asforepa.exceptions;
 
-import de.gematik.idp.data.Oauth2ErrorCode;
+import de.gematik.idp.asforepa.data.AsEpaErrorCode;
 import java.io.Serial;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
@@ -25,24 +25,24 @@ import org.springframework.web.server.ResponseStatusException;
 public class AsEpaException extends ResponseStatusException {
 
   @Serial private static final long serialVersionUID = -1744157595090697769L;
-  @Getter private final Oauth2ErrorCode oauth2ErrorCode;
+  @Getter private final AsEpaErrorCode asforepaErrorCode;
 
   public AsEpaException(final Exception e) {
     super(HttpStatus.INTERNAL_SERVER_ERROR, "Runtime Error", e);
-    this.oauth2ErrorCode = Oauth2ErrorCode.INVALID_REQUEST;
+    this.asforepaErrorCode = AsEpaErrorCode.INVALID_AUTH;
   }
 
-  public AsEpaException(final Oauth2ErrorCode code, final String message, final HttpStatus status) {
+  public AsEpaException(final AsEpaErrorCode code, final String message, final HttpStatus status) {
     super(status, message);
-    this.oauth2ErrorCode = code;
+    this.asforepaErrorCode = code;
   }
 
   public AsEpaException(
       final String message,
       final Exception e,
       final HttpStatus status,
-      final Oauth2ErrorCode oauth2ErrorCode) {
+      final AsEpaErrorCode asforepaErrorCode) {
     super(status, message, e);
-    this.oauth2ErrorCode = oauth2ErrorCode;
+    this.asforepaErrorCode = asforepaErrorCode;
   }
 }

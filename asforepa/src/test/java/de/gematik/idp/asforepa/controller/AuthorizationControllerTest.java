@@ -23,6 +23,7 @@ import static de.gematik.idp.asforepa.AsEpaConstants.X_USERAGENT;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.jose4j.jws.EcdsaUsingShaAlgorithm.convertDerToConcatenated;
 
+import de.gematik.idp.asforepa.data.AsEpaErrorCode;
 import de.gematik.idp.asforepa.data.AuthCodeRequest;
 import de.gematik.idp.asforepa.exceptions.AsEpaException;
 import de.gematik.idp.crypto.EcSignerUtility;
@@ -65,7 +66,6 @@ class AuthorizationControllerTest {
   private JsonWebToken clientAttest;
   private JsonWebToken invalidClientAttest;
   private JsonWebToken invalidClientAttestBase64;
-  private String invalidAuthCodeBase64;
 
   private static final String VALID_USER_AGENT = "CLIENTID1234567890AB/2.1.12-45";
   private static final String VALID_AUTH_CODE =
@@ -249,27 +249,30 @@ class AuthorizationControllerTest {
                 .asJson()
                 .getBody()
                 .getObject()
-                .getString("error_description"))
+                .getString("errorDetail"))
         .contains("invalid user agent: doesn't match pattern");
   }
 
   @Test
   void invalidNonceRequest_response400_emptyUserAgent() {
-    assertThat(
-            Unirest.get(testHostUrl + NONCE_ENDPOINT).header(X_USERAGENT, "").asJson().getStatus())
-        .isEqualTo(HttpStatus.BAD_REQUEST.value());
+    final HttpResponse<JsonNode> resp =
+        Unirest.get(testHostUrl + NONCE_ENDPOINT).header(X_USERAGENT, null).asJson();
+    assertThat(resp.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+    assertThat(resp.getBody().getObject().getString("errorDetail"))
+        .contains("user agent header is missing");
+    assertThat(resp.getBody().getObject().getString("errorCode"))
+        .contains(AsEpaErrorCode.MALFORMED_REQUEST.getSerializationValue());
   }
 
   @Test
-  void invalidNonceRequest_emptyUserAgent_message() {
-    assertThat(
-            Unirest.get(testHostUrl + NONCE_ENDPOINT)
-                .header(X_USERAGENT, "")
-                .asJson()
-                .getBody()
-                .getObject()
-                .getString("error_description"))
-        .contains("missing user agent");
+  void invalidNonceRequest_response400_missingUserAgent() {
+    final HttpResponse<JsonNode> resp =
+        Unirest.get(testHostUrl + NONCE_ENDPOINT).header(X_USERAGENT, "").asJson();
+    assertThat(resp.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+    assertThat(resp.getBody().getObject().getString("errorDetail"))
+        .contains("user agent header is missing");
+    assertThat(resp.getBody().getObject().getString("errorCode"))
+        .contains(AsEpaErrorCode.MALFORMED_REQUEST.getSerializationValue());
   }
 
   @Test
@@ -369,29 +372,33 @@ class AuthorizationControllerTest {
   @Test
   void invalidSendAuthCodeRequest_emptyAuthCode() {
     final AuthCodeRequest authCodeRequest = new AuthCodeRequest("", clientAttest.getRawString());
-    assertThat(
-            Unirest.post(testHostUrl + AUTH_CODE_ENDPOINT)
-                .header("Content-Type", "application/json")
-                .header(X_USERAGENT, VALID_USER_AGENT)
-                .body(authCodeRequest)
-                .asString()
-                .getStatus())
-        .isEqualTo(HttpStatus.BAD_REQUEST.value());
+    final HttpResponse<JsonNode> resp =
+        Unirest.post(testHostUrl + AUTH_CODE_ENDPOINT)
+            .header("Content-Type", "application/json")
+            .header(X_USERAGENT, VALID_USER_AGENT)
+            .body(authCodeRequest)
+            .asJson();
+    assertThat(resp.getStatus()).isEqualTo(HttpStatus.FORBIDDEN.value());
+    assertThat(resp.getBody().getObject().getString("errorDetail"))
+        .contains("auth code is invalid");
+    assertThat(resp.getBody().getObject().getString("errorCode"))
+        .contains(AsEpaErrorCode.INVALID_AUTH.getSerializationValue());
   }
 
   @Test
-  void invalidSendAuthCodeRequest_emptyAuthCode_message() {
-    final AuthCodeRequest authCodeRequest = new AuthCodeRequest("", clientAttest.getRawString());
-    assertThat(
-            Unirest.post(testHostUrl + AUTH_CODE_ENDPOINT)
-                .header("Content-Type", "application/json")
-                .header(X_USERAGENT, VALID_USER_AGENT)
-                .body(authCodeRequest)
-                .asJson()
-                .getBody()
-                .getObject()
-                .getString("error_description"))
-        .contains("auth code is invalid");
+  void invalidSendAuthCodeRequest_missingAuthCode() {
+    final AuthCodeRequest authCodeRequest = new AuthCodeRequest(null, clientAttest.getRawString());
+    final HttpResponse<JsonNode> resp =
+        Unirest.post(testHostUrl + AUTH_CODE_ENDPOINT)
+            .header("Content-Type", "application/json")
+            .header(X_USERAGENT, VALID_USER_AGENT)
+            .body(authCodeRequest)
+            .asJson();
+    assertThat(resp.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+    assertThat(resp.getBody().getObject().getString("errorDetail"))
+        .contains("auth code is missing");
+    assertThat(resp.getBody().getObject().getString("errorCode"))
+        .isEqualTo(AsEpaErrorCode.MALFORMED_REQUEST.getSerializationValue());
   }
 
   @Test
@@ -407,7 +414,7 @@ class AuthorizationControllerTest {
                 .body(authCodeRequest)
                 .asString()
                 .getStatus())
-        .isEqualTo(HttpStatus.BAD_REQUEST.value());
+        .isEqualTo(HttpStatus.FORBIDDEN.value());
   }
 
   @Test
@@ -424,7 +431,7 @@ class AuthorizationControllerTest {
                 .asJson()
                 .getBody()
                 .getObject()
-                .getString("error_description"))
+                .getString("errorDetail"))
         .contains("auth code is invalid");
   }
 
@@ -439,7 +446,7 @@ class AuthorizationControllerTest {
                 .body(authCodeRequest)
                 .asString()
                 .getStatus())
-        .isEqualTo(HttpStatus.BAD_REQUEST.value());
+        .isEqualTo(HttpStatus.FORBIDDEN.value());
   }
 
   @Test
@@ -454,7 +461,7 @@ class AuthorizationControllerTest {
                 .asJson()
                 .getBody()
                 .getObject()
-                .getString("error_description"))
+                .getString("errorDetail"))
         .contains("auth code doesn't match base64url pattern");
   }
 
@@ -469,7 +476,7 @@ class AuthorizationControllerTest {
                 .body(authCodeRequest)
                 .asString()
                 .getStatus())
-        .isEqualTo(HttpStatus.BAD_REQUEST.value());
+        .isEqualTo(HttpStatus.FORBIDDEN.value());
   }
 
   @Test
@@ -484,7 +491,7 @@ class AuthorizationControllerTest {
                 .asJson()
                 .getBody()
                 .getObject()
-                .getString("error_description"))
+                .getString("errorDetail"))
         .contains("client attest doesn't match base64url pattern");
   }
 
@@ -499,7 +506,7 @@ class AuthorizationControllerTest {
                 .body(authCodeRequest)
                 .asString()
                 .getStatus())
-        .isEqualTo(HttpStatus.BAD_REQUEST.value());
+        .isEqualTo(HttpStatus.FORBIDDEN.value());
   }
 
   @Test
@@ -514,7 +521,7 @@ class AuthorizationControllerTest {
                 .asJson()
                 .getBody()
                 .getObject()
-                .getString("error_description"))
+                .getString("errorDetail"))
         .contains("client attest is invalid");
   }
 
@@ -531,7 +538,7 @@ class AuthorizationControllerTest {
                 .body(authCodeRequest)
                 .asString()
                 .getStatus())
-        .isEqualTo(HttpStatus.BAD_REQUEST.value());
+        .isEqualTo(HttpStatus.FORBIDDEN.value());
   }
 
   @Test
@@ -548,8 +555,40 @@ class AuthorizationControllerTest {
                 .asJson()
                 .getBody()
                 .getObject()
-                .getString("error_description"))
+                .getString("errorDetail"))
         .contains("client attest is invalid");
+  }
+
+  @Test
+  void invalidSendAuthCodeRequest_emptyClientAttest() {
+    final AuthCodeRequest authCodeRequest = new AuthCodeRequest(VALID_AUTH_CODE, "");
+    final HttpResponse<JsonNode> resp =
+        Unirest.post(testHostUrl + AUTH_CODE_ENDPOINT)
+            .header("Content-Type", "application/json")
+            .header(X_USERAGENT, VALID_USER_AGENT)
+            .body(authCodeRequest)
+            .asJson();
+    assertThat(resp.getStatus()).isEqualTo(HttpStatus.FORBIDDEN.value());
+    assertThat(resp.getBody().getObject().getString("errorDetail"))
+        .contains("client attest is invalid");
+    assertThat(resp.getBody().getObject().getString("errorCode"))
+        .contains(AsEpaErrorCode.INVALID_AUTH.getSerializationValue());
+  }
+
+  @Test
+  void invalidSendAuthCodeRequest_missingClientAttest() {
+    final AuthCodeRequest authCodeRequest = new AuthCodeRequest(VALID_AUTH_CODE, null);
+    final HttpResponse<JsonNode> resp =
+        Unirest.post(testHostUrl + AUTH_CODE_ENDPOINT)
+            .header("Content-Type", "application/json")
+            .header(X_USERAGENT, VALID_USER_AGENT)
+            .body(authCodeRequest)
+            .asJson();
+    assertThat(resp.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+    assertThat(resp.getBody().getObject().getString("errorDetail"))
+        .contains("client attest is missing");
+    assertThat(resp.getBody().getObject().getString("errorCode"))
+        .isEqualTo(AsEpaErrorCode.MALFORMED_REQUEST.getSerializationValue());
   }
 
   @Test
@@ -564,7 +603,7 @@ class AuthorizationControllerTest {
                 .asJson()
                 .getBody()
                 .getObject()
-                .getString("error_description"))
-        .contains("invalid nonce");
+                .getString("errorDetail"))
+        .contains("invalid or outdated nonce");
   }
 }

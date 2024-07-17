@@ -16,9 +16,9 @@
 
 package de.gematik.idp.asforepa.exceptions.handler;
 
+import de.gematik.idp.asforepa.data.AsEpaErrorCode;
+import de.gematik.idp.asforepa.data.AsEpaErrorResponse;
 import de.gematik.idp.asforepa.exceptions.AsEpaException;
-import de.gematik.idp.data.Oauth2ErrorCode;
-import de.gematik.idp.data.Oauth2ErrorResponse;
 import jakarta.validation.ConstraintViolationException;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -37,32 +37,43 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 public class AsEpaExceptionHandler {
 
   @ExceptionHandler(AsEpaException.class)
-  public ResponseEntity<Oauth2ErrorResponse> handleAsEpaException(final AsEpaException exc) {
+  public ResponseEntity<AsEpaErrorResponse> handleAsEpaException(final AsEpaException exc) {
     log.info("AsEpaException: {}", exc.getMessage());
-    final Oauth2ErrorResponse body = getBody(exc);
+    final AsEpaErrorResponse body = getBody(exc);
     return new ResponseEntity<>(body, getHeader(), exc.getStatusCode());
   }
 
   @ExceptionHandler(RuntimeException.class)
-  public ResponseEntity<Oauth2ErrorResponse> handleRuntimeException(final RuntimeException exc) {
+  public ResponseEntity<AsEpaErrorResponse> handleRuntimeException(final RuntimeException exc) {
     return handleAsEpaException(
         new AsEpaException(
             "AsEpa Runtime Exception: " + exc.getMessage(),
             exc,
             HttpStatus.INTERNAL_SERVER_ERROR,
-            Oauth2ErrorCode.INVALID_REQUEST));
+            AsEpaErrorCode.INTERNAL_ERROR));
   }
 
   @ExceptionHandler({
     MissingServletRequestParameterException.class,
-    MethodArgumentNotValidException.class,
     ConstraintViolationException.class
   })
-  public ResponseEntity<Oauth2ErrorResponse> handleMissingServletRequestParameter(
-      final Exception exc) {
+  public ResponseEntity<AsEpaErrorResponse> handleValidationException(final Exception exc) {
     return handleAsEpaException(
         new AsEpaException(
-            exc.getMessage(), exc, HttpStatus.BAD_REQUEST, Oauth2ErrorCode.INVALID_REQUEST));
+            exc.getMessage(), exc, HttpStatus.BAD_REQUEST, AsEpaErrorCode.MALFORMED_REQUEST));
+  }
+
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  public ResponseEntity<AsEpaErrorResponse> handleMethodArgumentNotValidException(
+      final MethodArgumentNotValidException exc) {
+    if (exc.getMessage().contains("missing")) {
+      return handleAsEpaException(
+          new AsEpaException(
+              exc.getMessage(), exc, HttpStatus.BAD_REQUEST, AsEpaErrorCode.MALFORMED_REQUEST));
+    }
+    return handleAsEpaException(
+        new AsEpaException(
+            exc.getMessage(), exc, HttpStatus.FORBIDDEN, AsEpaErrorCode.INVALID_AUTH));
   }
 
   private HttpHeaders getHeader() {
@@ -73,10 +84,11 @@ public class AsEpaExceptionHandler {
     return responseHeaders;
   }
 
-  private Oauth2ErrorResponse getBody(final AsEpaException exception) {
-    return Oauth2ErrorResponse.builder()
-        .errorDescription(exception.getReason())
-        .error(Optional.of(exception.getOauth2ErrorCode()).orElse(Oauth2ErrorCode.INVALID_REQUEST))
+  private AsEpaErrorResponse getBody(final AsEpaException exception) {
+    return AsEpaErrorResponse.builder()
+        .errorDetail(exception.getReason())
+        .errorCode(
+            Optional.of(exception.getAsforepaErrorCode()).orElse(AsEpaErrorCode.INVALID_AUTH))
         .build();
   }
 }

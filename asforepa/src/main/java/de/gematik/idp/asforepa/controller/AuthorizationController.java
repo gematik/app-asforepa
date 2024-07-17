@@ -28,16 +28,17 @@ import static de.gematik.idp.asforepa.AsEpaConstants.X_USERAGENT;
 import static de.gematik.idp.field.ClientUtilities.generateCodeChallenge;
 import static de.gematik.idp.field.ClientUtilities.generateCodeVerifier;
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import de.gematik.idp.asforepa.configuration.AsForEpaConfiguration;
+import de.gematik.idp.asforepa.data.AsEpaErrorCode;
 import de.gematik.idp.asforepa.data.AuthCodeRequest;
 import de.gematik.idp.asforepa.data.AuthorizationResponse;
 import de.gematik.idp.asforepa.data.NonceResponse;
 import de.gematik.idp.asforepa.data.UserAgentHeader;
 import de.gematik.idp.asforepa.exceptions.AsEpaException;
 import de.gematik.idp.crypto.Nonce;
-import de.gematik.idp.data.Oauth2ErrorCode;
 import de.gematik.idp.token.JsonWebToken;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -157,7 +158,7 @@ public class AuthorizationController {
   private void validateNonce(final String nonce) {
     if (!authSessions.containsKey(nonce)) {
       throw new AsEpaException(
-          Oauth2ErrorCode.INVALID_REQUEST, "invalid nonce", HttpStatus.BAD_REQUEST);
+          AsEpaErrorCode.STATUS_MISMATCH, "invalid or outdated nonce", HttpStatus.CONFLICT);
     } /* else if (authSessions.get(nonce).compareTo(ZonedDateTime.now()) < 0) {
         throw new AsEpaException(
             Oauth2ErrorCode.INVALID_REQUEST, "session expired", HttpStatus.BAD_REQUEST);
@@ -168,6 +169,11 @@ public class AuthorizationController {
     final JsonObject payload =
         JsonParser.parseString(new JsonWebToken(clientAttest).getPayloadDecoded())
             .getAsJsonObject();
+    final JsonElement nonceFromClientAttest = payload.get("nonce");
+    if (nonceFromClientAttest.isJsonNull()) {
+      throw new AsEpaException(
+          AsEpaErrorCode.STATUS_MISMATCH, "missing nonce in client attest", HttpStatus.CONFLICT);
+    }
     return payload.get("nonce").getAsString();
   }
 }

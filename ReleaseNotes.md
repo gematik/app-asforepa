@@ -1,3 +1,9 @@
+# Release 2.0.2
+
+- add custom AsEpaErrorResponse and AsEpaErrorCode
+- bug fix in null value validation
+- update dependencies
+
 # Release 2.0.1
 
 - bug fix in send_authcode_sc response

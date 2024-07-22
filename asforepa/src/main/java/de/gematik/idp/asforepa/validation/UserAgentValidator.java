@@ -28,11 +28,11 @@ public class UserAgentValidator implements ConstraintValidator<ValidateUserAgent
       cxt.buildConstraintViolationWithTemplate("user agent header is missing")
           .addConstraintViolation();
       return false;
-    } else if (!userAgent.matches("^[a-zA-Z0-9]{20}\\/[a-zA-Z0-9\\-\\.]{1,15}$")) {
+    } else if (!userAgent.matches("^[a-zA-Z0-9\\-]{1,20}\\/[a-zA-Z0-9\\-\\.]{1,15}$")) {
       cxt.disableDefaultConstraintViolation();
       cxt.buildConstraintViolationWithTemplate(
               "invalid user agent: doesn't match pattern"
-                  + " \"^[a-zA-Z0-9]{20}\\\\/[a-zA-Z0-9\\\\-\\\\.]{1,15}$\"")
+                  + " \"^[a-zA-Z0-9\\-]{1,20}\\/[a-zA-Z0-9\\-\\.]{1,15}$\"")
           .addConstraintViolation();
       return false;
     }

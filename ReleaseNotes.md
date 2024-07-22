@@ -1,3 +1,8 @@
+# Release 2.0.3
+
+- update regex pattern for user agent validation
+- update dependencies
+
 # Release 2.0.2
 
 - add custom AsEpaErrorResponse and AsEpaErrorCode

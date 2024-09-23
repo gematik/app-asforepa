@@ -115,9 +115,14 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>org.springdoc</groupId>
+      <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+      <version>2.6.0</version>
+    </dependency>
+    <dependency>
       <artifactId>mockito-core</artifactId>
       <groupId>org.mockito</groupId>
-      <version>5.12.0</version>
+      <version>5.13.0</version>
     </dependency>
     <dependency>
       <artifactId>mockserver-spring-test-listener</artifactId>
@@ -191,13 +196,13 @@
     <artifactId>asforepa-global</artifactId>
     <groupId>de.gematik.idp</groupId>
     <relativePath>../pom.xml</relativePath>
-    <version>2.0.3</version>
+    <version>3.0.0</version>
   </parent>
 
   <properties>
     <commit_hash>undefined</commit_hash>
   </properties>
 
-  <version>2.0.3</version>
+  <version>3.0.0</version>
 
 </project>

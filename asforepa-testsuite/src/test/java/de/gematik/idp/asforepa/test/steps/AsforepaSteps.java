@@ -57,6 +57,7 @@ public class AsforepaSteps {
     final JwtClaims claims = new JwtClaims();
     claims.setClaim(ClaimName.NONCE.getJoseName(), nonce);
     claims.setClaim(ClaimName.ISSUED_AT.getJoseName(), ZonedDateTime.now().toEpochSecond());
+    claims.setClaim(ClaimName.EXPIRES_AT.getJoseName(), ZonedDateTime.now().plusMinutes(20).toEpochSecond());
     final JsonWebSignature jsonWebSignature = new JsonWebSignature();
     jsonWebSignature.setPayload(claims.toJson());
     jsonWebSignature.setHeader("typ", "JWT");

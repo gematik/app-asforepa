@@ -123,6 +123,7 @@ public class AuthorizationController {
   public AuthorizationResponse sendAuthCodeSc(
       @Valid @RequestHeader(name = X_USERAGENT) final UserAgentHeader userAgent,
       @Valid @RequestBody final AuthCodeRequest authCodeRequest) {
+    validateClientAttest(authCodeRequest.getClientAttest());
     final String noncePayload = getNonceFromClientAttest(authCodeRequest.getClientAttest());
     validateNonce(noncePayload);
     authSessions.remove(noncePayload);
@@ -163,6 +164,31 @@ public class AuthorizationController {
         throw new AsEpaException(
             Oauth2ErrorCode.INVALID_REQUEST, "session expired", HttpStatus.BAD_REQUEST);
       }*/
+  }
+
+  private void validateClientAttest(final String clientAttest) {
+    final JsonObject payload =
+            JsonParser.parseString(new JsonWebToken(clientAttest).getPayloadDecoded())
+                    .getAsJsonObject();
+    final JsonElement exp = payload.get("exp");
+    final JsonElement iat = payload.get("iat");
+    if(exp.isJsonNull()) {
+      throw new AsEpaException(
+              AsEpaErrorCode.INVALID_AUTH, "missing claim exp in client attest", HttpStatus.FORBIDDEN);
+    }
+    if(iat.isJsonNull()) {
+      throw new AsEpaException(
+              AsEpaErrorCode.INVALID_AUTH, "missing claim iat in client attest", HttpStatus.FORBIDDEN);
+    }
+    if(exp.getAsLong() - iat.getAsLong() != 20 * 60){
+      throw new AsEpaException(
+              AsEpaErrorCode.INVALID_AUTH, "exp is not 20 minutes after iat", HttpStatus.FORBIDDEN
+      );
+    }
+    if(exp.getAsLong() < ZonedDateTime.now().toEpochSecond()) {
+      throw new AsEpaException(
+              AsEpaErrorCode.STATUS_MISMATCH, "client attest is expired", HttpStatus.CONFLICT);
+    }
   }
 
   private String getNonceFromClientAttest(final String clientAttest) {

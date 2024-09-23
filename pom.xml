@@ -7,12 +7,12 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.3.1</version>
+    <version>3.3.3</version>
   </parent>
 
   <groupId>de.gematik.idp</groupId>
   <artifactId>asforepa-global</artifactId>
-  <version>2.0.3</version>
+  <version>3.0.0</version>
   <packaging>pom</packaging>
 
   <description>asforepa - Authorization Server for ePA</description>
@@ -62,7 +62,7 @@
     <docker.registry.gematik>local</docker.registry.gematik>
     <docker.image.name.asforepa>${docker.registry.gematik}/idm/asforepa
     </docker.image.name.asforepa>
-    <version.java>17</version.java>
+    <java.version>21</java.version>
     <mpir.skip>true</mpir.skip>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -80,20 +80,18 @@
     <version.bouncycastle.bcpkix>1.78.1</version.bouncycastle.bcpkix>
     <version.commons-io>2.16.1</version.commons-io>
     <version.json>20240303</version.json>
-    <version.log4j2>2.23.1</version.log4j2>
+    <version.log4j2>2.24.0</version.log4j2>
     <version.plexus-utils>3.4.2</version.plexus-utils>
-    <version.rest-assured>5.3.0</version.rest-assured>
-    <version.unirest.java.core>4.4.0</version.unirest.java.core>
+    <version.unirest.java.core>4.4.4</version.unirest.java.core>
     <version.unirest.objectmapper.jackson>4.2.9</version.unirest.objectmapper.jackson>
     <version.httpclient>5.3.1</version.httpclient>
 
     <version.build-helper-maven-plugin>3.3.0</version.build-helper-maven-plugin>
-    <version.docker-maven-plugin>0.44.0</version.docker-maven-plugin>
+    <version.docker-maven-plugin>0.45.0</version.docker-maven-plugin>
     <version.copy-rename-maven-plugin>1.0.1</version.copy-rename-maven-plugin>
 
-    <version.idp-commons>28.0.2</version.idp-commons>
-    <version.idp-crypto>28.0.2</version.idp-crypto>
-    <version.idp-test>28.0.2</version.idp-test>
+    <version.idp-commons>29.0.1</version.idp-commons>
+    <version.idp-test>29.0.1</version.idp-test>
 
     <version.jacoco-maven-plugin>0.8.12</version.jacoco-maven-plugin>
     <version.jakarta.ws.rs-api>4.0.0</version.jakarta.ws.rs-api>
@@ -103,21 +101,20 @@
     <version.maven-compiler-plugin>3.13.0</version.maven-compiler-plugin>
     <version.maven-enforcer-plugin>3.5.0</version.maven-enforcer-plugin>
     <version.maven-failsafe-plugin>3.2.5</version.maven-failsafe-plugin>
-    <version.maven-gpg-plugin>3.2.4</version.maven-gpg-plugin>
-    <version.maven-jar-plugin>3.3.0</version.maven-jar-plugin>
+    <version.maven-gpg-plugin>3.2.6</version.maven-gpg-plugin>
     <version.maven-javadoc-plugin>3.4.1</version.maven-javadoc-plugin>
-    <version.maven-project-info-reports-plugin>3.6.2</version.maven-project-info-reports-plugin>
+    <version.maven-project-info-reports-plugin>3.7.0</version.maven-project-info-reports-plugin>
     <!-- only needed for mvn site to avoid stack traces flooding the console -->
     <version.maven-resources-plugin>3.3.1</version.maven-resources-plugin>
-    <version.maven-site-plugin>3.12.1</version.maven-site-plugin>
+    <version.maven-site-plugin>3.20.0</version.maven-site-plugin>
     <!-- settings for upload to sonar server -->
     <version.maven-source-plugin>3.2.1</version.maven-source-plugin>
-    <version.maven-surefire-plugin>3.3.1</version.maven-surefire-plugin>
+    <version.maven-surefire-plugin>3.5.0</version.maven-surefire-plugin>
     <version.nexus-staging-maven-plugin>1.7.0</version.nexus-staging-maven-plugin>
     <version.sonar-maven-plugin>4.0.0.4121</version.sonar-maven-plugin>
     <version.spotless-maven-plugin>2.43.0</version.spotless-maven-plugin>
-    <version.spotless.google-java-format>1.16.0</version.spotless.google-java-format>
-    <version.spring-boot-maven-plugin>3.0.1</version.spring-boot-maven-plugin>
+    <version.spotless.google-java-format>1.17.0</version.spotless.google-java-format>
+    <version.spring-boot-maven-plugin>3.3.2</version.spring-boot-maven-plugin>
     <yarnAuditAnalyzerEnabled>false</yarnAuditAnalyzerEnabled>
   </properties>
 
@@ -187,12 +184,7 @@
         <groupId>commons-io</groupId>
         <artifactId>commons-io</artifactId>
         <version>${version.commons-io}</version>
-      </dependency>
-      <dependency>
-        <groupId>de.gematik.idp</groupId>
-        <artifactId>idp-crypto</artifactId>
-        <version>${version.idp-crypto}</version>
-        <scope>compile</scope>
+        <scope>test</scope>
       </dependency>
       <dependency>
         <groupId>de.gematik.idp</groupId>
@@ -248,8 +240,8 @@
           <version>${version.maven-compiler-plugin}</version>
           <configuration>
             <encoding>${project.build.sourceEncoding}</encoding>
-            <source>${version.java}</source>
-            <target>${version.java}</target>
+            <source>${java.version}</source>
+            <target>${java.version}</target>
             <debug>true</debug>
           </configuration>
         </plugin>
@@ -273,8 +265,8 @@
                   <version>${version.maven}</version>
                 </requireMavenVersion>
                 <requireJavaVersion>
-                  <message>Java version should be ${version.java}.</message>
-                  <version>${version.java}</version>
+                  <message>Java version should be ${java.version}.</message>
+                  <version>${java.version}</version>
                 </requireJavaVersion>
               </rules>
             </configuration>

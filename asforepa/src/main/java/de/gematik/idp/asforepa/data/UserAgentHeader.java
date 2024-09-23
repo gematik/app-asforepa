@@ -16,6 +16,7 @@
 
 package de.gematik.idp.asforepa.data;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import de.gematik.idp.asforepa.validation.ValidateUserAgent;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,7 +26,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserAgentHeader {
-  @ValidateUserAgent private String userAgent;
+  @JsonProperty("x-useragent")
+  @ValidateUserAgent
+  private String userAgent;
 
   @Override
   public String toString() {

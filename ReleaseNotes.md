@@ -1,3 +1,11 @@
+# Release 3.0.0
+
+- Java 21
+- switch to docker base image eclipse-temurin:21-jre
+- update dependencies
+- add dependency for OpenAPI Specification
+- add validation for iat and exp of client attest
+
 # Release 2.0.3
 
 - update regex pattern for user agent validation

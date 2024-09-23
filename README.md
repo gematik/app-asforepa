@@ -59,11 +59,11 @@ therefore added for unit tests.
 
 ## Usage
 
-| Method | Endpoint                      | Request                                                            | Response         | Validation                                                                                                                                                                          |
-|--------|-------------------------------|--------------------------------------------------------------------|------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| GET    | getNonce                      | -                                                                  | body: nonce      | -                                                                                                                                                                                   |
-| GET    | send_authorization_request_sc | -                                                                  | header: location | -                                                                                                                                                                                   |
-| POST   | send_authcode_sc              | body:<br/> AuthCodeRequest <br/> (conatins authCode, clientAttest) | body: vau-np     | *authCode:* <br/> + not null <br/> + all header claims correct <br/> - no validation of the claim value <br/> <br/> *clientAttest:* <br/> + not null <br/> + checks algorithm value |
+| Method | Endpoint                      | Request                                                                                                  | Response         | Validation                                                                                                                                                                                              |
+|--------|-------------------------------|----------------------------------------------------------------------------------------------------------|------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| GET    | getNonce                      | header: </br> x-useragent                                                                                | body: nonce      | -                                                                                                                                                                                                       |
+| GET    | send_authorization_request_sc | header: </br> x-useragent                                                                                | header: location | -                                                                                                                                                                                                       |
+| POST   | send_authcode_sc              | header: </br> x-useragent </br> </br> body:<br/> AuthCodeRequest <br/> (conatins authCode, clientAttest) | body: vau-np     | *authCode:* <br/> + not null <br/> + all header claims correct <br/> - no validation of the claim value <br/> <br/> *clientAttest:* <br/> + not null <br/> + iat and exp </br> + checks algorithm value |
 
 **getNonce**
 > - PS requests a valid nonce
@@ -87,3 +87,13 @@ therefore added for unit tests.
 > - AS validates both values for not being null
 > - AS validates if authCode has correct claims, but doesn't check the claim value
 > - AS checks if algorithm in client attest header is "ES256" or "PS256"
+
+## OpenAPI Specification
+
+You can receive the OpenAPI Specification under the following paths
+
+| Format  | Path                                   |
+|---------|----------------------------------------|
+| JSON    | http://127.0.0.1:8086/v3/api-docs      |
+| YAML    | http://127.0.0.1:8086/v3/api-docs.yaml |
+| SWAGGER | http://127.0.0.1:8086/swagger-ui.html  |

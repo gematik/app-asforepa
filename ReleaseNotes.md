@@ -1,3 +1,8 @@
+# Release 3.0.1
+
+- add validation for length of client attest signature
+- update dependencies
+
 # Release 3.0.0
 
 - Java 21

@@ -16,12 +16,12 @@
 
 package de.gematik.idp.asforepa.controller;
 
-import static de.gematik.idp.asforepa.AsEpaConstants.AUTHZ_REQUEST_SC_ENDPOINT;
-import static de.gematik.idp.asforepa.AsEpaConstants.AUTH_CODE_ENDPOINT;
-import static de.gematik.idp.asforepa.AsEpaConstants.NONCE_ENDPOINT;
-import static de.gematik.idp.asforepa.AsEpaConstants.X_USERAGENT;
+import static de.gematik.idp.asforepa.AsEpaConstants.*;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.jose4j.jws.EcdsaUsingShaAlgorithm.convertDerToConcatenated;
+import static org.jose4j.jws.AlgorithmIdentifiers.ECDSA_USING_P256_CURVE_AND_SHA256;
+import static org.jose4j.jws.AlgorithmIdentifiers.RSA_PSS_USING_SHA256;
+import static org.jose4j.jws.EcdsaUsingShaAlgorithm.*;
+import static org.jose4j.jws.RsaUsingShaAlgorithm.*;
 
 import de.gematik.idp.asforepa.data.AsEpaErrorCode;
 import de.gematik.idp.asforepa.data.AuthCodeRequest;
@@ -35,6 +35,7 @@ import de.gematik.idp.token.JsonWebToken;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
 import java.time.ZonedDateTime;
 import java.util.Base64;
 import java.util.function.UnaryOperator;
@@ -43,7 +44,7 @@ import kong.unirest.core.JsonNode;
 import kong.unirest.core.Unirest;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.jose4j.jws.AlgorithmIdentifiers;
+import org.jose4j.jws.EcdsaUsingShaAlgorithm;
 import org.jose4j.jws.JsonWebSignature;
 import org.jose4j.jwt.JwtClaims;
 import org.junit.jupiter.api.BeforeAll;
@@ -63,18 +64,19 @@ class AuthorizationControllerTest {
 
   @LocalServerPort private int localServerPort;
   private String testHostUrl;
-  private JsonWebToken validClientAttest;
+  private JsonWebToken validClientAttestECDSA;
+  private JsonWebToken validClientAttestRSA;
   private JsonWebToken invalidClientAttestAnyNonce;
   private JsonWebToken invalidClientAttestBase64;
   private JsonWebToken invalidClientAttestExpired;
   private JsonWebToken invalidClientAttestExpTimeInvalid;
+  private JsonWebToken invalidClientAttestIatInFuture;
 
   private static final String VALID_USER_AGENT = "CLIENTID1234567890AB/2.1.12-45";
   private static final String VALID_AUTH_CODE =
       "eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIiwiY3R5IjoiTkpXVCIsImV4cCI6MTcwMTM0MTkxNX0..YokE-g-EdrYxp6BK.CNldvZZwQuPHfkl3X9dNXVjk2M2LyKj_3A85dtEOGfAG5knjl7Q9P5ce8WoVp8SiXmNm63eUI9XcpFOjdAjxVTrHufnRUYjMZY4VZvXhqDW1Zalz_qC7eVNCiAZE2nXy6ozeLJmibLhgp2flLCGT-Ap1sVH8u6LZflcu-cIPhYR89A2pUh40Kg0ItCtJ1dqG6vinlsMRLs8t2oc5G4-gmI6O-1IlN2ekSTS6zGkq301YueHY8xGyij9SPoIxoiwBuo5C2lDBjWXNMCTKy9JPEl4S3vevg9UFO4bGaw5myoH8xN-S07ZKm3EnkvlzKXdTrBmcFusKE9NOBH4fgLmO4AFHqCEVDmHm7OAejVpRueSKAQZ18VZFUkqPdBYjFkpI_-Q45qBVIVAICsXFSa62LO6uZw6qDeME7c4NonTJCijcQ-RvFGc5Am2A7uJ1jzxiocpU4qRume3V-yWn9_tz0gcBqfUa2ejM2SziXg3PQzYYJ7bxTzWvbuNtBQhA_wzxr8eWf-4Z3NZSsuGzkX3ru5xTDrAJvivm01MqySUZkJz4Ho-kwJ2Fef5sVVMx8EN5fdxvYKUpGtco214a5gdFwVmPg3IiroXR264KWRP9lMgkBLgCyeQXQ07dR4_vl9uU47ytVFzQdshVpK3-1kSq_4SFEzvixCLZqRR4Mv7-PjF8Jmcdftp1jt7zg0Syt7PLYY4hCJCWe_Ftk2G7QD79kPPkvxwKbP1MqxWwliN6uUIYN8UMaIvu-6oPLYeoa8BaAoQiG9tdFL_UXXAGB-tW-VT-1ONofwr6_ZJI7n4jtO5-AZ1ccS1Oocqsc9kDnsFfNouMPTp0HcS690LN1oP-RkRnA3c-dmdSCJdsjsrI2I0tkh5pxlWs_Sg_vn10BjGtYaQHLGdT8cEf8nSRtrZLj1HkAYc5uxuVzJ84enIwQkFEn6dwJRShglxWw9DCWv7sTvww_PNw1Kt8BrzXuPJ7pOP5qi2MJjkOaJ-gqIp4NzGQ7n4Q1vv4ERgTiZlLSm_7fofd_GN4QFp-45DpnHXPtKyAKDbVXTh73myiPbgIIlhG7aaO6PW4aw7z2VuPaVXhv0932UdkdQ7CvJrWDsnLmUIviu72Z7uFA7aI4ilpT4yPcdv2c3Se1cnG4mITOGycBfMtX41tglv5k-YjMdzocWegKgZKwk6hk39O26FxLwto_xfr_2U2_y1S67dRviCRUcCPSmusYUtxKtb_mG-fGyt6hrlWN26y5LKvmB0mUH6kyUSTzyfzLmc4M6ExCs2cO8JpSGENHP5itwMCQ-HxRJ1sfH2LlMn7ECSaz6kPeaKPT2Rrvxck0GF2R-dqY_NMTeC8CV9BJWP9HNpGbxELe7j_RBkPcwXednfHFRBd8r24rZn7gHVi2Dd33g.Xtx_4AO2Gfbz1NeyzfSmaw";
   private static final String AUTH_CODE_BASE64 =
       "eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIiwiY3R5IjoiTkpXVCIsImV4cCI6MTcwMTM0MTkxNX0..YokE+g+EdrYxp6BK.CNldvZZwQuPHfkl3X9dNXVjk2M2LyKj/3A85dtEOGfAG5knjl7Q9P5ce8WoVp8SiXmNm63eUI9XcpFOjdAjxVTrHufnRUYjMZY4VZvXhqDW1Zalz/qC7eVNCiAZE2nXy6ozeLJmibLhgp2flLCGT+Ap1sVH8u6LZflcu+cIPhYR89A2pUh40Kg0ItCtJ1dqG6vinlsMRLs8t2oc5G4+gmI6O+1IlN2ekSTS6zGkq301YueHY8xGyij9SPoIxoiwBuo5C2lDBjWXNMCTKy9JPEl4S3vevg9UFO4bGaw5myoH8xN+S07ZKm3EnkvlzKXdTrBmcFusKE9NOBH4fgLmO4AFHqCEVDmHm7OAejVpRueSKAQZ18VZFUkqPdBYjFkpI/+Q45qBVIVAICsXFSa62LO6uZw6qDeME7c4NonTJCijcQ+RvFGc5Am2A7uJ1jzxiocpU4qRume3V+yWn9/tz0gcBqfUa2ejM2SziXg3PQzYYJ7bxTzWvbuNtBQhA/wzxr8eWf+4Z3NZSsuGzkX3ru5xTDrAJvivm01MqySUZkJz4Ho+kwJ2Fef5sVVMx8EN5fdxvYKUpGtco214a5gdFwVmPg3IiroXR264KWRP9lMgkBLgCyeQXQ07dR4/vl9uU47ytVFzQdshVpK3+1kSq/4SFEzvixCLZqRR4Mv7+PjF8Jmcdftp1jt7zg0Syt7PLYY4hCJCWe/Ftk2G7QD79kPPkvxwKbP1MqxWwliN6uUIYN8UMaIvu+6oPLYeoa8BaAoQiG9tdFL/UXXAGB+tW+VT+1ONofwr6/ZJI7n4jtO5+AZ1ccS1Oocqsc9kDnsFfNouMPTp0HcS690LN1oP+RkRnA3c+dmdSCJdsjsrI2I0tkh5pxlWs/Sg/vn10BjGtYaQHLGdT8cEf8nSRtrZLj1HkAYc5uxuVzJ84enIwQkFEn6dwJRShglxWw9DCWv7sTvww/PNw1Kt8BrzXuPJ7pOP5qi2MJjkOaJ+gqIp4NzGQ7n4Q1vv4ERgTiZlLSm/7fofd/GN4QFp+45DpnHXPtKyAKDbVXTh73myiPbgIIlhG7aaO6PW4aw7z2VuPaVXhv0932UdkdQ7CvJrWDsnLmUIviu72Z7uFA7aI4ilpT4yPcdv2c3Se1cnG4mITOGycBfMtX41tglv5k+YjMdzocWegKgZKwk6hk39O26FxLwto/xfr/2U2/y1S67dRviCRUcCPSmusYUtxKtb/mG+fGyt6hrlWN26y5LKvmB0mUH6kyUSTzyfzLmc4M6ExCs2cO8JpSGENHP5itwMCQ+HxRJ1sfH2LlMn7ECSaz6kPeaKPT2Rrvxck0GF2R+dqY/NMTeC8CV9BJWP9HNpGbxELe7j/RBkPcwXednfHFRBd8r24rZn7gHVi2Dd33g.Xtx/4AO2Gfbz1NeyzfSmaw";
-  private static final int VALID_EXP_TIME_IN_MINUTES = 20;
 
   @SneakyThrows
   @BeforeAll
@@ -86,16 +88,22 @@ class AuthorizationControllerTest {
     Unirest.config().reset();
     Unirest.config().followRedirects(false);
 
-
-    invalidClientAttestAnyNonce = createClientAttest(smcbIdentityEcc, "7721435277f5d0137b17ef8b835ca03cf09dc23926aa1766e4f8132433ff37d6", true, 20, ZonedDateTime.now());
-
+    invalidClientAttestAnyNonce =
+        createClientAttest(
+            smcbIdentityEcc,
+            "7721435277f5d0137b17ef8b835ca03cf09dc23926aa1766e4f8132433ff37d6",
+            true,
+            CLIENT_ATTEST_EXP_IN_MINUTES,
+            ZonedDateTime.now());
   }
 
   @SneakyThrows
   @BeforeEach
   void setupBeforeEach(
       @PkiKeyResolver.Filename("833621999741600-2_c.hci.aut-apo-ecc")
-          final PkiIdentity smcbIdentityEcc) {
+          final PkiIdentity smcbIdentityEcc,
+      @PkiKeyResolver.Filename("833621999741600-2_c.hci.aut-apo-rsa")
+          final PkiIdentity smcbIdentityRsa) {
     final String nonce =
         Unirest.get(testHostUrl + NONCE_ENDPOINT)
             .header(X_USERAGENT, VALID_USER_AGENT)
@@ -104,12 +112,27 @@ class AuthorizationControllerTest {
             .getObject()
             .getString("nonce");
 
-
-
-    validClientAttest = createValidClientAttest(smcbIdentityEcc, nonce);
-    invalidClientAttestExpTimeInvalid = createClientAttest(smcbIdentityEcc, nonce, true, 30, ZonedDateTime.now());
-    invalidClientAttestExpired = createClientAttest(smcbIdentityEcc, nonce, true, VALID_EXP_TIME_IN_MINUTES, ZonedDateTime.now().minusMinutes(21));
-    invalidClientAttestBase64 = createClientAttest(smcbIdentityEcc, nonce, false, VALID_EXP_TIME_IN_MINUTES, ZonedDateTime.now());
+    validClientAttestECDSA = createValidClientAttest(smcbIdentityEcc, nonce);
+    validClientAttestRSA = createValidClientAttest(smcbIdentityRsa, nonce);
+    invalidClientAttestExpTimeInvalid =
+        createClientAttest(smcbIdentityEcc, nonce, true, 30, ZonedDateTime.now());
+    invalidClientAttestExpired =
+        createClientAttest(
+            smcbIdentityEcc,
+            nonce,
+            true,
+            CLIENT_ATTEST_EXP_IN_MINUTES,
+            ZonedDateTime.now().minusMinutes(CLIENT_ATTEST_EXP_IN_MINUTES + 5));
+    invalidClientAttestBase64 =
+        createClientAttest(
+            smcbIdentityEcc, nonce, false, CLIENT_ATTEST_EXP_IN_MINUTES, ZonedDateTime.now());
+    invalidClientAttestIatInFuture =
+        createClientAttest(
+            smcbIdentityEcc,
+            nonce,
+            true,
+            CLIENT_ATTEST_EXP_IN_MINUTES,
+            ZonedDateTime.now().plusMinutes(25));
   }
 
   @Test
@@ -204,7 +227,21 @@ class AuthorizationControllerTest {
   @Test
   void validSendAuthCodeRequest_response200() {
     final AuthCodeRequest authCodeRequest =
-        new AuthCodeRequest(VALID_AUTH_CODE, validClientAttest.getRawString());
+        new AuthCodeRequest(VALID_AUTH_CODE, validClientAttestECDSA.getRawString());
+    assertThat(
+            Unirest.post(testHostUrl + AUTH_CODE_ENDPOINT)
+                .header("Content-Type", "application/json")
+                .header(X_USERAGENT, VALID_USER_AGENT)
+                .body(authCodeRequest)
+                .asString()
+                .getStatus())
+        .isEqualTo(HttpStatus.OK.value());
+  }
+
+  @Test
+  void validSendAuthCodeRequest_clientAttestRSA_response200() {
+    final AuthCodeRequest authCodeRequest =
+        new AuthCodeRequest(VALID_AUTH_CODE, validClientAttestRSA.getRawString());
     assertThat(
             Unirest.post(testHostUrl + AUTH_CODE_ENDPOINT)
                 .header("Content-Type", "application/json")
@@ -218,7 +255,7 @@ class AuthorizationControllerTest {
   @Test
   void validSendAuthCodeRequest_response200_checkContentType() {
     final AuthCodeRequest authCodeRequest =
-        new AuthCodeRequest(VALID_AUTH_CODE, validClientAttest.getRawString());
+        new AuthCodeRequest(VALID_AUTH_CODE, validClientAttestECDSA.getRawString());
     assertThat(
             Unirest.post(testHostUrl + AUTH_CODE_ENDPOINT)
                 .header("Content-Type", "application/json")
@@ -233,7 +270,7 @@ class AuthorizationControllerTest {
   @Test
   void validSendAuthCodeRequest_response200_checkVNPisHex() {
     final AuthCodeRequest authCodeRequest =
-        new AuthCodeRequest(VALID_AUTH_CODE, validClientAttest.getRawString());
+        new AuthCodeRequest(VALID_AUTH_CODE, validClientAttestECDSA.getRawString());
 
     final JsonNode authorizationResponse =
         Unirest.post(testHostUrl + AUTH_CODE_ENDPOINT)
@@ -249,7 +286,7 @@ class AuthorizationControllerTest {
   @Test
   void validSendAuthCodeRequestValidUserAgent_response200() {
     final AuthCodeRequest authCodeRequest =
-        new AuthCodeRequest(VALID_AUTH_CODE, validClientAttest.getRawString());
+        new AuthCodeRequest(VALID_AUTH_CODE, validClientAttestECDSA.getRawString());
     assertThat(
             Unirest.post(testHostUrl + AUTH_CODE_ENDPOINT)
                 .header("Content-Type", "application/json")
@@ -261,8 +298,46 @@ class AuthorizationControllerTest {
   }
 
   @Test
+  void invalidSendAuthCodeRequest_invalidSignatureLengthClientAttest() {
+    final String clientAttestInvalidSignatureLength =
+        "eyJhbGciOiAiRVMyNTYiLCAidHlwIjogIkpXVCIsICJ4NWMiOiBbIk1JSURuekNDQTBhZ0F3SUJBZ0lIQXdUQmVkVDhhVEFLQmdncWhrak9QUVFEQWpDQm1URUxNQWtHQTFVRUJoTUNSRVV4SHpBZEJnTlZCQW9NRm1kbGJXRjBhV3NnUjIxaVNDQk9UMVF0VmtGTVNVUXhTREJHQmdOVkJBc01QMGx1YzNScGRIVjBhVzl1SUdSbGN5QkhaWE4xYm1Sb1pXbDBjM2RsYzJWdWN5MURRU0JrWlhJZ1ZHVnNaVzFoZEdscmFXNW1jbUZ6ZEhKMWEzUjFjakVmTUIwR0ExVUVBd3dXUjBWTkxsTk5RMEl0UTBFNUlGUkZVMVF0VDA1TVdUQWVGdzB5TURBeE1qY3dNREF3TURCYUZ3MHlOREV5TVRFeU16VTVOVGxhTUlIZk1Rc3dDUVlEVlFRR0V3SkVSVEVUTUJFR0ExVUVCd3dLUjJWeWMzUm9iMlpsYmpFT01Bd0dBMVVFRVF3Rk9EWXpOamd4R2pBWUJnTlZCQWtNRVU5MGRHOHRTR0ZvYmkxVGRISXVJRGs1TVRNd01RWURWUVFLRENwUWNtRjRhWE1nVFdGeWRHbHVZU0JIY3NPa1ptbHVJRTVwWjJkbGJXVjVaWEpPVDFRdFZrRk1TVVF4RXpBUkJnTlZCQVFNQ2s1cFoyZGxiV1Y1WlhJeEVEQU9CZ05WQkNvTUIwMWhjblJwYm1FeE16QXhCZ05WQkFNTUtsQnlZWGhwY3lCTllYSjBhVzVoSUVkeXc2Um1hVzRnVG1sbloyVnRaWGxsY2xSRlUxUXRUMDVNV1RCYU1CUUdCeXFHU000OUFnRUdDU3NrQXdNQ0NBRUJCd05DQUFSR2VHcjlDU2Z0UmU0OEtsNlhndmFlSEw4VDVZQm9PVWtkNVYxWERWZTQ0cUhVU0YySksrUDZFQ09XOGxxWDBER0JmMW9PdjYvZkVEYTBvc054amc1ZW80SUJMakNDQVNvd0RBWURWUjBUQVFIL0JBSXdBREE0QmdnckJnRUZCUWNCQVFRc01Db3dLQVlJS3dZQkJRVUhNQUdHSEdoMGRIQTZMeTlsYUdOaExtZGxiV0YwYVdzdVpHVXZiMk56Y0M4d0V3WURWUjBsQkF3d0NnWUlLd1lCQlFVSEF3SXdId1lEVlIwakJCZ3dGb0FVWW9pYXhONzhvL09UT2N1ZmtPY1RtajJKekhVd0hRWURWUjBPQkJZRUZQeXI0MjIvMUU3U2YzRFAzOUVzUzhQdmgyTXBNQTRHQTFVZER3RUIvd1FFQXdJSGdEQWdCZ05WSFNBRUdUQVhNQW9HQ0NxQ0ZBQk1CSUVqTUFrR0J5cUNGQUJNQkUwd1dRWUZLeVFJQXdNRVVEQk9NRXd3U2pCSU1FWXdGZ3dVUW1WMGNtbGxZbk56ZE1Pa2RIUmxJRUZ5ZW5Rd0NRWUhLb0lVQUV3RU1oTWhNUzFUVFVNdFFpMVVaWE4wYTJGeWRHVXRPRGd6TVRFd01EQXdNVEUzTVRRMU1Bb0dDQ3FHU000OUJBTUNBMGNBTUVRQ0lGWFQzWi9YMXdoWFRkTjUyMWZsb01OSHJGUzJRUWx1OTdnemhXY2xtZllhQWlBNGNrWk1odU1yTThYS21LRnJYMWhnU1dYOENLejBNNTdmTENUZjhGL21ZZz09Il19.eyJpYXQiOiAzOTQxMDgwNTA2LCAiZXhwIjogMzk0MTA4MTcwNiwgIm5vbmNlIjogImZtZ2Vjajg0dzhvMmRWclpsQlZDc0xCV2kyT1lGZXRNWk5LZW15TEtqb3JKN1BVVnd6MlloWWdlNmJGZTVnYmQifQ.TUVRQ0lFaFcxUWVtVjVhVThjUzdZVW1mSG1rQ3BzQmt4NnNjUVFkazZRQmdaWHZWQWlCcE5IR2YwdVZkWWxTdDJudmxmdEpsakhWRzNQREVDaWJUS1ZjeXFlRFB3dz09";
+
+    final AuthCodeRequest authCodeRequest =
+        new AuthCodeRequest(VALID_AUTH_CODE, clientAttestInvalidSignatureLength);
+    final HttpResponse<JsonNode> resp =
+        Unirest.post(testHostUrl + AUTH_CODE_ENDPOINT)
+            .header("Content-Type", "application/json")
+            .header(X_USERAGENT, VALID_USER_AGENT)
+            .body(authCodeRequest)
+            .asJson();
+    assertThat(resp.getStatus()).isEqualTo(HttpStatus.FORBIDDEN.value());
+    assertThat(resp.getBody().getObject().getString("errorDetail"))
+        .contains("client attest has invalid signature length");
+    assertThat(resp.getBody().getObject().getString("errorCode"))
+        .contains(AsEpaErrorCode.INVALID_AUTH.getSerializationValue());
+  }
+
+  @Test
+  void invalidSendAuthCodeRequest_iatInFuture() {
+    final AuthCodeRequest authCodeRequest =
+        new AuthCodeRequest(VALID_AUTH_CODE, invalidClientAttestIatInFuture.getRawString());
+    final HttpResponse<JsonNode> resp =
+        Unirest.post(testHostUrl + AUTH_CODE_ENDPOINT)
+            .header("Content-Type", "application/json")
+            .header(X_USERAGENT, VALID_USER_AGENT)
+            .body(authCodeRequest)
+            .asJson();
+    assertThat(resp.getStatus()).isEqualTo(HttpStatus.FORBIDDEN.value());
+    assertThat(resp.getBody().getObject().getString("errorDetail"))
+        .contains("iat of client attest should not be in the future");
+    assertThat(resp.getBody().getObject().getString("errorCode"))
+        .contains(AsEpaErrorCode.INVALID_AUTH.getSerializationValue());
+  }
+
+  @Test
   void invalidSendAuthCodeRequest_emptyAuthCode() {
-    final AuthCodeRequest authCodeRequest = new AuthCodeRequest("", validClientAttest.getRawString());
+    final AuthCodeRequest authCodeRequest =
+        new AuthCodeRequest("", validClientAttestECDSA.getRawString());
     final HttpResponse<JsonNode> resp =
         Unirest.post(testHostUrl + AUTH_CODE_ENDPOINT)
             .header("Content-Type", "application/json")
@@ -278,7 +353,8 @@ class AuthorizationControllerTest {
 
   @Test
   void invalidSendAuthCodeRequest_missingAuthCode() {
-    final AuthCodeRequest authCodeRequest = new AuthCodeRequest(null, validClientAttest.getRawString());
+    final AuthCodeRequest authCodeRequest =
+        new AuthCodeRequest(null, validClientAttestECDSA.getRawString());
     final HttpResponse<JsonNode> resp =
         Unirest.post(testHostUrl + AUTH_CODE_ENDPOINT)
             .header("Content-Type", "application/json")
@@ -297,7 +373,7 @@ class AuthorizationControllerTest {
     final String invalidAuthCode =
         "eyJhbGciOiJkaXIiLCJjdHkiOiJOSldUIiwiZXhwIjoxNzAxMzQxOTE1fQ..YokE-g-EdrYxp6BK.CNldvZZwQuPHfkl3X9dNXVjk2M2LyKj_3A85dtEOGfAG5knjl7Q9P5ce8WoVp8SiXmNm63eUI9XcpFOjdAjxVTrHufnRUYjMZY4VZvXhqDW1Zalz_qC7eVNCiAZE2nXy6ozeLJmibLhgp2flLCGT-Ap1sVH8u6LZflcu-cIPhYR89A2pUh40Kg0ItCtJ1dqG6vinlsMRLs8t2oc5G4-gmI6O-1IlN2ekSTS6zGkq301YueHY8xGyij9SPoIxoiwBuo5C2lDBjWXNMCTKy9JPEl4S3vevg9UFO4bGaw5myoH8xN-S07ZKm3EnkvlzKXdTrBmcFusKE9NOBH4fgLmO4AFHqCEVDmHm7OAejVpRueSKAQZ18VZFUkqPdBYjFkpI_-Q45qBVIVAICsXFSa62LO6uZw6qDeME7c4NonTJCijcQ-RvFGc5Am2A7uJ1jzxiocpU4qRume3V-yWn9_tz0gcBqfUa2ejM2SziXg3PQzYYJ7bxTzWvbuNtBQhA_wzxr8eWf-4Z3NZSsuGzkX3ru5xTDrAJvivm01MqySUZkJz4Ho-kwJ2Fef5sVVMx8EN5fdxvYKUpGtco214a5gdFwVmPg3IiroXR264KWRP9lMgkBLgCyeQXQ07dR4_vl9uU47ytVFzQdshVpK3-1kSq_4SFEzvixCLZqRR4Mv7-PjF8Jmcdftp1jt7zg0Syt7PLYY4hCJCWe_Ftk2G7QD79kPPkvxwKbP1MqxWwliN6uUIYN8UMaIvu-6oPLYeoa8BaAoQiG9tdFL_UXXAGB-tW-VT-1ONofwr6_ZJI7n4jtO5-AZ1ccS1Oocqsc9kDnsFfNouMPTp0HcS690LN1oP-RkRnA3c-dmdSCJdsjsrI2I0tkh5pxlWs_Sg_vn10BjGtYaQHLGdT8cEf8nSRtrZLj1HkAYc5uxuVzJ84enIwQkFEn6dwJRShglxWw9DCWv7sTvww_PNw1Kt8BrzXuPJ7pOP5qi2MJjkOaJ-gqIp4NzGQ7n4Q1vv4ERgTiZlLSm_7fofd_GN4QFp-45DpnHXPtKyAKDbVXTh73myiPbgIIlhG7aaO6PW4aw7z2VuPaVXhv0932UdkdQ7CvJrWDsnLmUIviu72Z7uFA7aI4ilpT4yPcdv2c3Se1cnG4mITOGycBfMtX41tglv5k-YjMdzocWegKgZKwk6hk39O26FxLwto_xfr_2U2_y1S67dRviCRUcCPSmusYUtxKtb_mG-fGyt6hrlWN26y5LKvmB0mUH6kyUSTzyfzLmc4M6ExCs2cO8JpSGENHP5itwMCQ-HxRJ1sfH2LlMn7ECSaz6kPeaKPT2Rrvxck0GF2R-dqY_NMTeC8CV9BJWP9HNpGbxELe7j_RBkPcwXednfHFRBd8r24rZn7gHVi2Dd33g.Xtx_4AO2Gfbz1NeyzfSmaw";
     final AuthCodeRequest authCodeRequest =
-        new AuthCodeRequest(invalidAuthCode, validClientAttest.getRawString());
+        new AuthCodeRequest(invalidAuthCode, validClientAttestECDSA.getRawString());
     assertThat(
             Unirest.post(testHostUrl + AUTH_CODE_ENDPOINT)
                 .header("Content-Type", "application/json")
@@ -313,7 +389,7 @@ class AuthorizationControllerTest {
     final String invalidAuthCode =
         "eyJhbGciOiJkaXIiLCJjdHkiOiJOSldUIiwiZXhwIjoxNzAxMzQxOTE1fQ..YokE-g-EdrYxp6BK.CNldvZZwQuPHfkl3X9dNXVjk2M2LyKj_3A85dtEOGfAG5knjl7Q9P5ce8WoVp8SiXmNm63eUI9XcpFOjdAjxVTrHufnRUYjMZY4VZvXhqDW1Zalz_qC7eVNCiAZE2nXy6ozeLJmibLhgp2flLCGT-Ap1sVH8u6LZflcu-cIPhYR89A2pUh40Kg0ItCtJ1dqG6vinlsMRLs8t2oc5G4-gmI6O-1IlN2ekSTS6zGkq301YueHY8xGyij9SPoIxoiwBuo5C2lDBjWXNMCTKy9JPEl4S3vevg9UFO4bGaw5myoH8xN-S07ZKm3EnkvlzKXdTrBmcFusKE9NOBH4fgLmO4AFHqCEVDmHm7OAejVpRueSKAQZ18VZFUkqPdBYjFkpI_-Q45qBVIVAICsXFSa62LO6uZw6qDeME7c4NonTJCijcQ-RvFGc5Am2A7uJ1jzxiocpU4qRume3V-yWn9_tz0gcBqfUa2ejM2SziXg3PQzYYJ7bxTzWvbuNtBQhA_wzxr8eWf-4Z3NZSsuGzkX3ru5xTDrAJvivm01MqySUZkJz4Ho-kwJ2Fef5sVVMx8EN5fdxvYKUpGtco214a5gdFwVmPg3IiroXR264KWRP9lMgkBLgCyeQXQ07dR4_vl9uU47ytVFzQdshVpK3-1kSq_4SFEzvixCLZqRR4Mv7-PjF8Jmcdftp1jt7zg0Syt7PLYY4hCJCWe_Ftk2G7QD79kPPkvxwKbP1MqxWwliN6uUIYN8UMaIvu-6oPLYeoa8BaAoQiG9tdFL_UXXAGB-tW-VT-1ONofwr6_ZJI7n4jtO5-AZ1ccS1Oocqsc9kDnsFfNouMPTp0HcS690LN1oP-RkRnA3c-dmdSCJdsjsrI2I0tkh5pxlWs_Sg_vn10BjGtYaQHLGdT8cEf8nSRtrZLj1HkAYc5uxuVzJ84enIwQkFEn6dwJRShglxWw9DCWv7sTvww_PNw1Kt8BrzXuPJ7pOP5qi2MJjkOaJ-gqIp4NzGQ7n4Q1vv4ERgTiZlLSm_7fofd_GN4QFp-45DpnHXPtKyAKDbVXTh73myiPbgIIlhG7aaO6PW4aw7z2VuPaVXhv0932UdkdQ7CvJrWDsnLmUIviu72Z7uFA7aI4ilpT4yPcdv2c3Se1cnG4mITOGycBfMtX41tglv5k-YjMdzocWegKgZKwk6hk39O26FxLwto_xfr_2U2_y1S67dRviCRUcCPSmusYUtxKtb_mG-fGyt6hrlWN26y5LKvmB0mUH6kyUSTzyfzLmc4M6ExCs2cO8JpSGENHP5itwMCQ-HxRJ1sfH2LlMn7ECSaz6kPeaKPT2Rrvxck0GF2R-dqY_NMTeC8CV9BJWP9HNpGbxELe7j_RBkPcwXednfHFRBd8r24rZn7gHVi2Dd33g.Xtx_4AO2Gfbz1NeyzfSmaw";
     final AuthCodeRequest authCodeRequest =
-        new AuthCodeRequest(invalidAuthCode, validClientAttest.getRawString());
+        new AuthCodeRequest(invalidAuthCode, validClientAttestECDSA.getRawString());
     assertThat(
             Unirest.post(testHostUrl + AUTH_CODE_ENDPOINT)
                 .header("Content-Type", "application/json")
@@ -329,7 +405,7 @@ class AuthorizationControllerTest {
   @Test
   void invalidSendAuthCodeRequest_base64AuthCode() {
     final AuthCodeRequest authCodeRequest =
-        new AuthCodeRequest(AUTH_CODE_BASE64, validClientAttest.getRawString());
+        new AuthCodeRequest(AUTH_CODE_BASE64, validClientAttestECDSA.getRawString());
     assertThat(
             Unirest.post(testHostUrl + AUTH_CODE_ENDPOINT)
                 .header("Content-Type", "application/json")
@@ -343,7 +419,7 @@ class AuthorizationControllerTest {
   @Test
   void invalidSendAuthCodeRequest_base64AuthCode_message() {
     final AuthCodeRequest authCodeRequest =
-        new AuthCodeRequest(AUTH_CODE_BASE64, validClientAttest.getRawString());
+        new AuthCodeRequest(AUTH_CODE_BASE64, validClientAttestECDSA.getRawString());
     assertThat(
             Unirest.post(testHostUrl + AUTH_CODE_ENDPOINT)
                 .header("Content-Type", "application/json")
@@ -447,7 +523,7 @@ class AuthorizationControllerTest {
                 .getBody()
                 .getObject()
                 .getString("errorDetail"))
-        .contains("client attest is invalid");
+        .contains("client attest uses invalid algorithm");
   }
 
   @Test
@@ -499,85 +575,100 @@ class AuthorizationControllerTest {
   }
 
   @Test
-  void invalidSendAuthCodeRequest_invalidClientAttestExpired(){
+  void invalidSendAuthCodeRequest_invalidClientAttestExpired() {
     final AuthCodeRequest authCodeRequest =
-            new AuthCodeRequest(VALID_AUTH_CODE, invalidClientAttestExpired.getRawString());
+        new AuthCodeRequest(VALID_AUTH_CODE, invalidClientAttestExpired.getRawString());
     assertThat(
             Unirest.post(testHostUrl + AUTH_CODE_ENDPOINT)
-                    .header("Content-Type", "application/json")
-                    .header(X_USERAGENT, VALID_USER_AGENT)
-                    .body(authCodeRequest)
-                    .asJson()
-                    .getBody()
-                    .getObject()
-                    .getString("errorDetail"))
-            .contains("client attest is expired");
+                .header("Content-Type", "application/json")
+                .header(X_USERAGENT, VALID_USER_AGENT)
+                .body(authCodeRequest)
+                .asJson()
+                .getBody()
+                .getObject()
+                .getString("errorDetail"))
+        .contains("client attest is expired");
   }
 
   @Test
-  void invalidSendAuthCodeRequest_invalidClientAttestExpTimeInvalid(){
+  void invalidSendAuthCodeRequest_invalidClientAttestExpTimeInvalid() {
     final AuthCodeRequest authCodeRequest =
-            new AuthCodeRequest(VALID_AUTH_CODE, invalidClientAttestExpTimeInvalid.getRawString());
+        new AuthCodeRequest(VALID_AUTH_CODE, invalidClientAttestExpTimeInvalid.getRawString());
     assertThat(
             Unirest.post(testHostUrl + AUTH_CODE_ENDPOINT)
-                    .header("Content-Type", "application/json")
-                    .header(X_USERAGENT, VALID_USER_AGENT)
-                    .body(authCodeRequest)
-                    .asJson()
-                    .getBody()
-                    .getObject()
-                    .getString("errorDetail"))
-            .contains("exp is not 20 minutes after iat");
+                .header("Content-Type", "application/json")
+                .header(X_USERAGENT, VALID_USER_AGENT)
+                .body(authCodeRequest)
+                .asJson()
+                .getBody()
+                .getObject()
+                .getString("errorDetail"))
+        .contains("exp is not " + CLIENT_ATTEST_EXP_IN_MINUTES + " minutes after iat");
   }
 
-
-  private JsonWebToken createClientAttest(final PkiIdentity smcbIdentityEcc, final String nonce, final boolean isBase64Url, final int expTimeInMinutes, final ZonedDateTime issuedAt){
+  private JsonWebToken createClientAttest(
+      final PkiIdentity smcbIdentity,
+      final String nonce,
+      final boolean isBase64Url,
+      final int expTimeInMinutes,
+      final ZonedDateTime issuedAt) {
     final JwtClaims claims = new JwtClaims();
     claims.setClaim(ClaimName.NONCE.getJoseName(), nonce);
     claims.setClaim(ClaimName.ISSUED_AT.getJoseName(), issuedAt.toEpochSecond());
-    claims.setClaim(ClaimName.EXPIRES_AT.getJoseName(), issuedAt.plusMinutes(expTimeInMinutes).toEpochSecond());
+    claims.setClaim(
+        ClaimName.EXPIRES_AT.getJoseName(), issuedAt.plusMinutes(expTimeInMinutes).toEpochSecond());
     final JsonWebSignature jsonWebSignature = new JsonWebSignature();
     jsonWebSignature.setPayload(claims.toJson());
     jsonWebSignature.setHeader("typ", "JWT");
-    jsonWebSignature.setCertificateChainHeaderValue(smcbIdentityEcc.getCertificate());
-    jsonWebSignature.setAlgorithmHeaderValue(
-            AlgorithmIdentifiers.ECDSA_USING_P256_CURVE_AND_SHA256);
-    jsonWebSignature.setKey(smcbIdentityEcc.getPrivateKey());
+    jsonWebSignature.setCertificateChainHeaderValue(smcbIdentity.getCertificate());
+    if (smcbIdentity.getCertificate().getPublicKey() instanceof RSAPublicKey) {
+      jsonWebSignature.setAlgorithmHeaderValue(RSA_PSS_USING_SHA256);
+    } else {
+      jsonWebSignature.setAlgorithmHeaderValue(ECDSA_USING_P256_CURVE_AND_SHA256);
+    }
+    jsonWebSignature.setKey(smcbIdentity.getPrivateKey());
     final String signedJwt =
-            jsonWebSignature.getHeaders().getEncodedHeader()
-                    + "."
-                    + jsonWebSignature.getEncodedPayload()
-                    + "."
-                    + (isBase64Url ? Base64.getUrlEncoder().withoutPadding() : Base64.getEncoder())
-                    .encodeToString(
-                            getSignatureBytes(
-                                    getContentSigner(smcbIdentityEcc),
-                                    jsonWebSignature,
-                                    sigData -> {
-                                      try {
-                                        return convertDerToConcatenated(sigData, 64);
-                                      } catch (final IOException e) {
-                                        throw new AsEpaException(e);
-                                      }
-                                    }));
+        jsonWebSignature.getHeaders().getEncodedHeader()
+            + "."
+            + jsonWebSignature.getEncodedPayload()
+            + "."
+            + (isBase64Url ? Base64.getUrlEncoder().withoutPadding() : Base64.getEncoder())
+                .encodeToString(
+                    getSignatureBytes(
+                        getContentSigner(smcbIdentity),
+                        jsonWebSignature,
+                        sigData -> {
+                          if (smcbIdentity.getCertificate().getPublicKey()
+                              instanceof RSAPublicKey) {
+                            return sigData;
+                          } else {
+                            try {
+                              return EcdsaUsingShaAlgorithm.convertDerToConcatenated(sigData, 64);
+                            } catch (final IOException e) {
+                              throw new AsEpaException(e);
+                            }
+                          }
+                        }));
 
     return new JsonWebToken(signedJwt);
   }
 
-  private JsonWebToken createValidClientAttest(final PkiIdentity smcbIdentityEcc, final String nonce){
-    return createClientAttest(smcbIdentityEcc, nonce, true, VALID_EXP_TIME_IN_MINUTES, ZonedDateTime.now());
+  private JsonWebToken createValidClientAttest(
+      final PkiIdentity smcbIdentityEcc, final String nonce) {
+    return createClientAttest(
+        smcbIdentityEcc, nonce, true, CLIENT_ATTEST_EXP_IN_MINUTES, ZonedDateTime.now());
   }
 
   private byte[] getSignatureBytes(
-          final UnaryOperator<byte[]> contentSigner,
-          final JsonWebSignature jsonWebSignature,
-          final UnaryOperator<byte[]> signatureStripper) {
+      final UnaryOperator<byte[]> contentSigner,
+      final JsonWebSignature jsonWebSignature,
+      final UnaryOperator<byte[]> signatureStripper) {
     return signatureStripper.apply(
-            contentSigner.apply(
-                    (jsonWebSignature.getHeaders().getEncodedHeader()
-                            + "."
-                            + jsonWebSignature.getEncodedPayload())
-                            .getBytes(StandardCharsets.UTF_8)));
+        contentSigner.apply(
+            (jsonWebSignature.getHeaders().getEncodedHeader()
+                    + "."
+                    + jsonWebSignature.getEncodedPayload())
+                .getBytes(StandardCharsets.UTF_8)));
   }
 
   private static UnaryOperator<byte[]> getContentSigner(final PkiIdentity pkiIdentity) {

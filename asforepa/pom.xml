@@ -122,7 +122,7 @@
     <dependency>
       <artifactId>mockito-core</artifactId>
       <groupId>org.mockito</groupId>
-      <version>5.13.0</version>
+      <version>5.14.2</version>
     </dependency>
     <dependency>
       <artifactId>mockserver-spring-test-listener</artifactId>
@@ -152,9 +152,9 @@
     </dependency>
     <!-- https://mvnrepository.com/artifact/org.apache.httpcomponents.client5/httpclient5 -->
     <dependency>
-      <groupId>org.apache.httpcomponents.client5</groupId>
-      <artifactId>httpclient5</artifactId>
-      <version>${version.httpclient}</version>
+      <groupId>org.apache.httpcomponents.core5</groupId>
+      <artifactId>httpcore5</artifactId>
+      <version>${version.httpcore5}</version>
     </dependency>
     <!-- https://mvnrepository.com/artifact/com.google.code.gson/gson -->
     <dependency>
@@ -196,13 +196,13 @@
     <artifactId>asforepa-global</artifactId>
     <groupId>de.gematik.idp</groupId>
     <relativePath>../pom.xml</relativePath>
-    <version>3.0.0</version>
+    <version>3.0.1</version>
   </parent>
 
   <properties>
     <commit_hash>undefined</commit_hash>
   </properties>
 
-  <version>3.0.0</version>
+  <version>3.0.1</version>
 
 </project>

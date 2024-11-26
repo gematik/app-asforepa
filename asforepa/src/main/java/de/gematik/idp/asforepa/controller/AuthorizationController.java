@@ -16,15 +16,7 @@
 
 package de.gematik.idp.asforepa.controller;
 
-import static de.gematik.idp.asforepa.AsEpaConstants.AUTHZ_REQUEST_SC_ENDPOINT;
-import static de.gematik.idp.asforepa.AsEpaConstants.AUTH_CODE_ENDPOINT;
-import static de.gematik.idp.asforepa.AsEpaConstants.CODE_CHALLENGE_METHOD;
-import static de.gematik.idp.asforepa.AsEpaConstants.MAX_AUTH_SESSION_AMOUNT;
-import static de.gematik.idp.asforepa.AsEpaConstants.NONCE_ENDPOINT;
-import static de.gematik.idp.asforepa.AsEpaConstants.NONCE_STR_LEN;
-import static de.gematik.idp.asforepa.AsEpaConstants.REQUEST_URI_TTL_SECS;
-import static de.gematik.idp.asforepa.AsEpaConstants.VAU_NP_STR_LEN;
-import static de.gematik.idp.asforepa.AsEpaConstants.X_USERAGENT;
+import static de.gematik.idp.asforepa.AsEpaConstants.*;
 import static de.gematik.idp.field.ClientUtilities.generateCodeChallenge;
 import static de.gematik.idp.field.ClientUtilities.generateCodeVerifier;
 
@@ -168,26 +160,33 @@ public class AuthorizationController {
 
   private void validateClientAttest(final String clientAttest) {
     final JsonObject payload =
-            JsonParser.parseString(new JsonWebToken(clientAttest).getPayloadDecoded())
-                    .getAsJsonObject();
+        JsonParser.parseString(new JsonWebToken(clientAttest).getPayloadDecoded())
+            .getAsJsonObject();
     final JsonElement exp = payload.get("exp");
     final JsonElement iat = payload.get("iat");
-    if(exp.isJsonNull()) {
+    if (exp.isJsonNull()) {
       throw new AsEpaException(
-              AsEpaErrorCode.INVALID_AUTH, "missing claim exp in client attest", HttpStatus.FORBIDDEN);
+          AsEpaErrorCode.INVALID_AUTH, "missing claim exp in client attest", HttpStatus.FORBIDDEN);
     }
-    if(iat.isJsonNull()) {
+    if (iat.isJsonNull()) {
       throw new AsEpaException(
-              AsEpaErrorCode.INVALID_AUTH, "missing claim iat in client attest", HttpStatus.FORBIDDEN);
+          AsEpaErrorCode.INVALID_AUTH, "missing claim iat in client attest", HttpStatus.FORBIDDEN);
     }
-    if(exp.getAsLong() - iat.getAsLong() != 20 * 60){
+    if (iat.getAsLong() > ZonedDateTime.now().toEpochSecond()) {
       throw new AsEpaException(
-              AsEpaErrorCode.INVALID_AUTH, "exp is not 20 minutes after iat", HttpStatus.FORBIDDEN
-      );
+          AsEpaErrorCode.INVALID_AUTH,
+          "iat of client attest should not be in the future",
+          HttpStatus.FORBIDDEN);
     }
-    if(exp.getAsLong() < ZonedDateTime.now().toEpochSecond()) {
+    if (exp.getAsLong() - iat.getAsLong() != CLIENT_ATTEST_EXP_IN_MINUTES * 60) {
       throw new AsEpaException(
-              AsEpaErrorCode.STATUS_MISMATCH, "client attest is expired", HttpStatus.CONFLICT);
+          AsEpaErrorCode.INVALID_AUTH,
+          "exp is not " + CLIENT_ATTEST_EXP_IN_MINUTES + " minutes after iat",
+          HttpStatus.FORBIDDEN);
+    }
+    if (exp.getAsLong() < ZonedDateTime.now().toEpochSecond()) {
+      throw new AsEpaException(
+          AsEpaErrorCode.STATUS_MISMATCH, "client attest is expired", HttpStatus.CONFLICT);
     }
   }
 

@@ -21,7 +21,10 @@ import de.gematik.idp.field.ClaimName;
 import de.gematik.idp.token.JsonWebToken;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
+import java.security.cert.X509Certificate;
+import java.util.Base64;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import org.jose4j.jws.AlgorithmIdentifiers;
 
 public class ClientAttestValidator implements ConstraintValidator<ValidateClientAttest, String> {
@@ -39,15 +42,44 @@ public class ClientAttestValidator implements ConstraintValidator<ValidateClient
           .addConstraintViolation();
       return false;
     }
-    return isValidClientAttest(new JsonWebToken(clientAttest));
+    return isValidClientAttest(new JsonWebToken(clientAttest), cxt);
   }
 
-  private static boolean isValidClientAttest(final JsonWebToken clientAttest) {
+  private static boolean isValidClientAttest(
+      final JsonWebToken clientAttest, final ConstraintValidatorContext cxt) {
     try {
       final String algorithm =
           (String) clientAttest.getHeaderClaim(ClaimName.ALGORITHM).orElseThrow();
-      return algorithm.equals(AlgorithmIdentifiers.RSA_PSS_USING_SHA256)
-          || algorithm.equals(AlgorithmIdentifiers.ECDSA_USING_P256_CURVE_AND_SHA256);
+      if (!(algorithm.equals(AlgorithmIdentifiers.RSA_PSS_USING_SHA256)
+          || algorithm.equals(AlgorithmIdentifiers.ECDSA_USING_P256_CURVE_AND_SHA256))) {
+        cxt.disableDefaultConstraintViolation();
+        cxt.buildConstraintViolationWithTemplate("client attest uses invalid algorithm")
+            .addConstraintViolation();
+        return false;
+      }
+      final int signatureLength =
+          Base64.getUrlDecoder().decode(clientAttest.getRawString().split("\\.")[2]).length;
+      if ((algorithm.equals(AlgorithmIdentifiers.RSA_PSS_USING_SHA256) && (signatureLength != 256))
+          || (algorithm.equals(AlgorithmIdentifiers.ECDSA_USING_P256_CURVE_AND_SHA256)
+              && signatureLength != 64)) {
+        cxt.disableDefaultConstraintViolation();
+        cxt.buildConstraintViolationWithTemplate("client attest has invalid signature length")
+            .addConstraintViolation();
+        return false;
+      }
+      if (algorithm.equals(AlgorithmIdentifiers.RSA_PSS_USING_SHA256)) {
+        final Optional<X509Certificate> smcbCertificate =
+            clientAttest.getClientCertificateFromHeader();
+        if (smcbCertificate.isEmpty()) {
+          return false;
+        }
+        try {
+          clientAttest.verify(smcbCertificate.get().getPublicKey());
+        } catch (final IdpJoseException e) {
+          return false;
+        }
+      }
+      return true;
     } catch (final IdpJoseException | NoSuchElementException e) {
       return false;
     }

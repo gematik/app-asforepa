@@ -53,9 +53,8 @@ project root:
 
 `mvn clean verify`
 
-The key `asforepa/src/test/resources/833621999741600-2_c.hci.aut-apo-ecc.p12` can be published and
-was
-therefore added for unit tests.
+The keys `asforepa/src/test/resources/833621999741600-2_c.hci.aut-apo-ecc.p12`, `asforepa/src/test/resources/833621999741600-2_c.hci.aut-apo-rsa.p12` can be published and
+were therefore added for unit tests.
 
 ## Usage
 

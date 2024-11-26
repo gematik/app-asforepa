@@ -32,4 +32,5 @@ public final class AsEpaConstants {
   public static final String X_USERAGENT = "x-useragent";
   public static final int MAX_AUTH_SESSION_AMOUNT = 10000;
   public static final int REQUEST_URI_TTL_SECS = 90;
+  public static final int CLIENT_ATTEST_EXP_IN_MINUTES = 20;
 }

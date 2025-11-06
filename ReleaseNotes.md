@@ -1,3 +1,8 @@
+# Release 3.1.0
+
+- refactor setting/printing log level - see [asforepa logging](README.md#asforepa-server-logging)
+- update dependencies
+
 # Release 3.0.1
 
 - add validation for length of client attest signature

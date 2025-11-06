@@ -4,9 +4,6 @@ asforepa:
   clientID: "ePA"
   redirectUri: "${REDIRECT_URI:http://test-ps.gematik.de/ePA}"
   scopes: [ "epa", "openid" ]
-  debug:
-    requestLogging: true
-  loglevel: info
 server:
   port: ${SERVER_PORT:8086}
 management:
@@ -16,11 +13,16 @@ management:
     web:
       exposure:
         include: "health"
-    enabled-by-default: false
+    access:
+      default: read_only
   endpoint:
     health:
-      enabled: true
+      access: read_only
     metrics:
-      enabled: true
+      access: read_only
     logfile:
-      enabled: true
+      access: read_only
+logging:
+  level:
+    de.gematik: ${LOG_LEVEL_GEMATIK:info}
+  CommonsRequestLoggingEnabled: ${REQUEST_LOGGING_ENABLED:true}

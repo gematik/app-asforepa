@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 gematik GmbH
+ * Copyright (Change Date see Readme), gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,19 +12,22 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
 
 package de.gematik.idp.asforepa;
 
 import de.gematik.idp.asforepa.configuration.AsForEpaConfiguration;
-import de.gematik.idp.brainPoolExtension.BrainpoolCurves;
 import jakarta.annotation.PostConstruct;
 import java.security.Security;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.logging.log4j.core.LoggerContext;
-import org.apache.logging.log4j.core.config.Configurator;
-import org.apache.logging.log4j.util.StackLocatorUtil;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Logger;
+import org.apache.logging.log4j.status.StatusLogger;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -49,22 +52,19 @@ public class AsForEpa {
   private final AsForEpaConfiguration asForEpaConfiguration;
 
   @PostConstruct
-  public void setAsForEpaLogLevel() {
-    final String loglevel = asForEpaConfiguration.getLoglevel();
-    final String loggerServer = "de.gematik.idp.asforepa";
-    final String loggerRequests = "org.springframework.web.filter.CommonsRequestLoggingFilter";
-    log.info("asForEpaConfiguration.getLoglevel(): {}", loglevel);
-    Configurator.setLevel(loggerServer, loglevel);
-    Configurator.setLevel(loggerRequests, loglevel);
+  public void printAsForEpaLogLevel() {
+    log.info("asForEpaConfiguration: {}", asForEpaConfiguration);
 
-    final LoggerContext loggerContext =
-        LoggerContext.getContext(StackLocatorUtil.getCallerClassLoader(2), false, null);
-    log.info("loglevel: {}", loggerContext.getLogger(loggerServer).getLevel());
-    BrainpoolCurves.init();
+    final Logger loggerGematik = (Logger) LogManager.getLogger("de.gematik");
+    StatusLogger.getLogger()
+        .log(
+            org.apache.logging.log4j.Level.OFF,
+            "loglevel for de.gematik: {}",
+            loggerGematik.getLevel());
   }
 
   @Bean
-  @ConditionalOnProperty(value = "asforepa.debug.requestLogging")
+  @ConditionalOnProperty(value = "logging.CommonsRequestLoggingEnabled", havingValue = "true")
   public CommonsRequestLoggingFilter requestLoggingFilter() {
     final CommonsRequestLoggingFilter loggingFilter = new CommonsRequestLoggingFilter();
     loggingFilter.setIncludeClientInfo(true);
@@ -72,6 +72,7 @@ public class AsForEpa {
     loggingFilter.setIncludePayload(true);
     loggingFilter.setMaxPayloadLength(64000);
     loggingFilter.setIncludeHeaders(true);
+    log.info("CommonsRequestLoggingFilter enabled");
     return loggingFilter;
   }
 }

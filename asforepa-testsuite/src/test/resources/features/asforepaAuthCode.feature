@@ -1,5 +1,5 @@
 #
-# Copyright 2024 gematik GmbH
+# Copyright (Change Date see Readme), gematik GmbH
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,6 +12,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+# *******
+#
+# For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
 #
 
 @Authz
@@ -33,7 +37,7 @@ Feature: Test Send Auth Code Endpoint
     Given TGR clear recorded messages
     When TGR set default header 'x-useragent' to '${asforepa.validUserAgent}'
     When TGR send empty GET request to "http://asforepa/epa/authz/v1/getNonce"
-    And TGR find request to path ".*"
+    And TGR find first request to path ".*"
     And generate client attest from nonce "!{rbel:currentResponseAsString('$.body.nonce')}" and save as clientAttest
     Then TGR current response with attribute "$.responseCode" matches "200"
     Given TGR clear recorded messages
@@ -46,5 +50,5 @@ Feature: Test Send Auth Code Endpoint
                "clientAttest": "${clientAttest}"
           }
         """
-    And TGR find request to path ".*"
+    And TGR find first request to path ".*"
     Then TGR current response with attribute "$.responseCode" matches "200"

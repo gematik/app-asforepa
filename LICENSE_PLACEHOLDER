@@ -18,28 +18,3 @@
  * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
 
-package de.gematik.idp.asforepa.data;
-
-import com.fasterxml.jackson.annotation.JsonValue;
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
-
-@JsonNaming(PropertyNamingStrategies.LowerCamelCaseStrategy.class)
-public enum AsEpaErrorCode {
-  MALFORMED_REQUEST("malformedRequest"),
-  INVALID_AUTH("invalAuth"),
-  NO_RESOURCE("noResource"),
-  STATUS_MISMATCH("statusMismatch"),
-  INTERNAL_ERROR("internalError");
-
-  private final String serializationValue;
-
-  @JsonValue
-  public String getSerializationValue() {
-    return this.serializationValue;
-  }
-
-  private AsEpaErrorCode(final String serializationValue) {
-    this.serializationValue = serializationValue;
-  }
-}

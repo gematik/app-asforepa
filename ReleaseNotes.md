@@ -1,5 +1,10 @@
+# Release 3.1.1
+
+- update dependencies
+
 # Release 3.1.0
 
+- ready for Java 25
 - refactor setting/printing log level - see [asforepa logging](README.md#asforepa-server-logging)
 - update dependencies
 

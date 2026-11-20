@@ -3,9 +3,10 @@
 **/target
 logs/
 
+automation/
 doc/intern/
-*.Jenkinsfile
 removeDockerImages.sh
 asforepa-testsuite/tiger.yaml
 checkLicenses.sh
+renovate.json
 

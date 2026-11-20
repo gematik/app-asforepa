@@ -1,4 +1,4 @@
-FROM eclipse-temurin:21-jre
+FROM gematik1/osadl-alpine-openjdk25-jre:1.1.2@sha256:7ea25bee8803671c7d3532c3111c7452c0291c751c3488e057d76066e6a7104c
 
 ARG COMMIT_HASH
 ARG VERSION
@@ -14,7 +14,12 @@ LABEL de.gematik.vendor="gematik GmbH" \
 # SIGTERM = 15 - https://de.wikipedia.org/wiki/Signal_(Unix)
 STOPSIGNAL SIGTERM
 
-HEALTHCHECK CMD curl --fail http://localhost:8080/actuator/health | grep UP || exit 1
+HEALTHCHECK --interval=15s \
+            --timeout=10s \
+            --start-period=30s \
+            --retries=3 \
+  CMD ["/usr/bin/wget", "--quiet", "--tries=1", "--spider", \
+       "http://localhost:8180/actuator/health"]
 
 # Default USERID and GROUPID
 ARG USERID=10000
